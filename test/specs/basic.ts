@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { TestSession } from './../../src/session';
+import { TestSession } from './../../src';
 import { createServer } from './../server/';
 
 const session = new TestSession(createServer());
