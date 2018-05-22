@@ -90,7 +90,7 @@ export class ClientEnvironment {
     const frameId = tree.frameTree.frame.id;
 
     const navPromise = this.frameStore.start(frameId);
-    this.page.navigate({ url });
+    await this.page.navigate({ url });
 
     const { networkResult, frame } = await navPromise;
 
