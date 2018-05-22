@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "esnext",
+    "lib": ["es5", "esnext", "es6", "scripthost", "dom"],
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "declaration": true,
+    "noUnusedLocals": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "outDir": "dist"
+  },
+  "include": [
+    "./specs/*.ts"
+  ]
+}
