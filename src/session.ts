@@ -1,6 +1,10 @@
 import { createSession } from 'chrome-debugging-client';
-import { ApplicationEnvironment } from "./app-env";
-import { TestServerApi } from "./test-server-api";
+import { ApplicationEnvironment } from './app-env';
+import { TestServerApi } from './test-server-api';
+
+// Import .env file for setting CHROME_BIN
+import dotenv from 'dotenv';
+dotenv.config();
 
 export class TestSession<S extends TestServerApi = TestServerApi> {
   public testServerPromise: Promise<S>;
@@ -15,8 +19,9 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
 
   private async runDebuggingSession(test: (appEnv: ApplicationEnvironment<S>) => Promise<void>, server: S) {
     return createSession(async (session) => {
+      const executablePath = process.env.CHROME_BIN;
       const browser = await session.spawnBrowser('exact', {
-        executablePath: '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome',
+        executablePath,
         additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
         windowSize: { width: 640, height: 320 }
       });
