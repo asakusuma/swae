@@ -18,9 +18,8 @@ describe('Service Worker', () => {
         return navigator.serviceWorker.register('/sw.js');
       });
       await client.waitForServiceWorkerRegistration();
-      await client.swState.waitForActivated('0');
 
-      const active = await client.swState.getActive();
+      const active = await client.swState.waitForActivated('0');
       expect(active.versionId).to.equal('0');
     });
   });
@@ -58,9 +57,8 @@ describe('Service Worker', () => {
       });
 
       await client2.waitForServiceWorkerRegistration();
-      await client2.swState.waitForActivated('0');
+      const sw = await client2.swState.waitForActivated('0');
 
-      const sw = client1.swState.getActive();
       const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
       expect(controlledClients).to.equal(2);
 
@@ -94,10 +92,8 @@ describe('Service Worker', () => {
         });
       });
       await client.waitForServiceWorkerRegistration();
-      await client.swState.waitForActivated('0');
 
-      const swState1 = await client.swState.getActive();
-      expect(swState1.versionId).to.equal('0', 'Should be at version 0');
+      await client.swState.waitForActivated('0');
 
       await app.getTestServer().incrementVersion();
 
@@ -123,5 +119,5 @@ describe('Service Worker', () => {
       const swState3 = await client.swState.getActive();
       expect(swState3.versionId).to.equal('1', 'Should be at version 1 after skipWaiting');
     });
-  }).timeout(4000);
+  });
 });

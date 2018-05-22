@@ -17,7 +17,7 @@
     "build-test": "tsc -p test/tsconfig.json",
     "watch": "tsc -w -p test/tsconfig.json",
     "lint": "tslint  -c tslint.json --project tslint.json 'src/**/*.ts' 'test/server/**/*.ts' 'test/specs/**/*.ts'",
-    "test": "npm run lint && npm run build-test && mocha test/dist/test/specs/basic.js"
+    "test": "npm run lint && npm run build-test && mocha test/dist/test/specs/basic.js --timeout 5000"
   },
   "dependencies": {
     "@types/chai": "^4.1.3",
