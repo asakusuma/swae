@@ -20,7 +20,7 @@ function serializeStateIdentifier({ version, state }: StateIdentifier): Serializ
   return `${version}:${state}`;
 }
 
-function timeout<T>(promise: Promise<T>, msg: string, timeout: number = 5000): Promise<T> {
+function addTimeout<T>(promise: Promise<T>, msg: string, timeout: number = 5000): Promise<T> {
   const timedOut: Promise<T> = new Promise((_resolve, reject) => {
     setTimeout(() => {
       reject(new Error(msg));
@@ -49,7 +49,7 @@ export class ServiceWorkerState {
 
   private log: boolean;
 
-  private stateListeners: StateIdMap<(VersionListener)[]>
+  private stateListeners: StateIdMap<(VersionListener)[]>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
 
   constructor(serviceWorker: ServiceWorker, log = false) {
@@ -106,12 +106,15 @@ export class ServiceWorkerState {
     return this.waitForState(version, 'activated');
   }
 
-  private waitForState(version: string, state: ServiceWorker.ServiceWorkerVersionStatus): Promise<ServiceWorker.ServiceWorkerVersion> {
+  private waitForState(
+    version: string,
+    state: ServiceWorker.ServiceWorkerVersionStatus
+  ): Promise<ServiceWorker.ServiceWorkerVersion> {
     const existingHistory = this.stateHistory.get({ version, state });
     if (existingHistory) {
       return Promise.resolve(existingHistory);
     }
-    return timeout(new Promise((resolve) => {
+    return addTimeout(new Promise((resolve) => {
       this.listen({
         version,
         state
@@ -128,6 +131,9 @@ export class ServiceWorkerState {
   }
 
   public getActive() {
+    if (!this.active) {
+      throw new Error('Error calling getActive(): There is no active worker yet. Try using waitForActivated()');
+    }
     return this.active;
   }
 

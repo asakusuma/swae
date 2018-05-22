@@ -114,11 +114,11 @@ export class ClientEnvironment {
 }
 
 function isAbsolutePath(url: string) {
-  if (url.length < 8 || url.substr(0,1) === '/') {
+  if (url.length < 8 || url.substr(0, 1) === '/') {
     return false;
-  } else if (url.substr(0,7) === 'http://') {
+  } else if (url.substr(0, 7) === 'http://') {
     return true;
-  } else if (url.substr(0,8) === 'https://') {
+  } else if (url.substr(0, 8) === 'https://') {
     return true;
   }
   return false;

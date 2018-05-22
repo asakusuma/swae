@@ -16,7 +16,7 @@
     "build": "tsc",
     "build-test": "tsc -p test/tsconfig.json",
     "watch": "tsc -w -p test/tsconfig.json",
-    "lint": "tslint --project src/",
+    "lint": "tslint  -c tslint.json 'src/**/*.ts'",
     "test": "npm run build-test && mocha test/dist/test/specs/basic.js"
   },
   "dependencies": {

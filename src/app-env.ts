@@ -17,7 +17,8 @@ export class ApplicationEnvironment<S extends TestServerApi = TestServerApi> {
     this.tabIdToClientEnv = {};
   }
 
-  public static async build<S extends TestServerApi = TestServerApi>(client: IAPIClient, session: ISession, testServer: S) {
+  public static async build<S extends TestServerApi = TestServerApi>
+    (client: IAPIClient, session: ISession, testServer: S) {
     const tabs = await client.listTabs();
     const initialTab = tabs[0];
 

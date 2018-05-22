@@ -1,4 +1,4 @@
-import { Network, Page } from "chrome-debugging-client/dist/protocol/tot";
+import { Network, Page } from 'chrome-debugging-client/dist/protocol/tot';
 
 export class FrameNavigation {
   private response: Network.ResponseReceivedParameters;
@@ -31,7 +31,7 @@ export class FrameNavigation {
 
 export class FrameStore {
   private frames: { [frameId: string]: FrameNavigation };
-  
+
   constructor() {
     this.frames = {};
   }
@@ -61,7 +61,7 @@ export class FrameStore {
 export interface PageNavigateResult {
   networkResult: Network.ResponseReceivedParameters;
   frame: Page.Frame;
-};
+}
 
 export interface NavigateResult extends PageNavigateResult {
   body: Network.GetResponseBodyReturn;
