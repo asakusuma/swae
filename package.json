@@ -7,6 +7,10 @@
   "repository": "git@github.com:asakusuma/swae.git",
   "author": "asakusuma <asa.kusuma@gmail.com>",
   "license": "MIT",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
   "scripts": {
     "serve": "tsc -p test/tsconfig.json && nodemon test/dist/test/server/standalone.js",
     "build": "tsc",
