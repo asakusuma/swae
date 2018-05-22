@@ -18,6 +18,7 @@ describe('Service Worker', () => {
         return navigator.serviceWorker.register('/sw.js');
       });
       await client.waitForServiceWorkerRegistration();
+      await client.swState.waitForActivated('0');
 
       const active = await client.swState.getActive();
       expect(active.versionId).to.equal('0');
@@ -34,6 +35,7 @@ describe('Service Worker', () => {
       });
 
       await client.waitForServiceWorkerRegistration();
+      await client.swState.waitForActivated('0');
 
       const { body, networkResult } = await client.navigate();
 
@@ -56,6 +58,7 @@ describe('Service Worker', () => {
       });
 
       await client2.waitForServiceWorkerRegistration();
+      await client2.swState.waitForActivated('0');
 
       const sw = client1.swState.getActive();
       const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
@@ -87,6 +90,7 @@ describe('Service Worker', () => {
         });
       });
       await client.waitForServiceWorkerRegistration();
+      await client.swState.waitForActivated('0');
 
       const swState1 = await client.swState.getActive();
       expect(swState1.versionId).to.equal('0', 'Should be at version 0');
