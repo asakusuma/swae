@@ -66,8 +66,12 @@ describe('Service Worker', () => {
 
       const navResult = await client2.navigate();
 
-      expect(navResult.networkResult.response.fromServiceWorker, '2nd tab with registered service worker should intercept requests').to.be.true;
-      expect(navResult.body.body.indexOf('from-service-worker') > 0, '2nd tab with registered service worker should add meta tag').to.be.true;
+      expect(
+        navResult.networkResult.response.fromServiceWorker,
+        '2nd tab with registered service worker should intercept requests').to.be.true;
+      expect(
+        navResult.body.body.indexOf('from-service-worker') > 0,
+        '2nd tab with registered service worker should add meta tag').to.be.true;
 
       // Go back to the first tab
       await app.openTabByIndex(0);
@@ -119,5 +123,5 @@ describe('Service Worker', () => {
       const swState3 = await client.swState.getActive();
       expect(swState3.versionId).to.equal('1', 'Should be at version 1 after skipWaiting');
     });
-  }).timeout(4000);;
+  }).timeout(4000);
 });

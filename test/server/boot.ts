@@ -18,7 +18,7 @@ export default function boot(serverApi: IServerApi): Express {
 
   app.get('/sw.js', (req, res) => {
     res.contentType('text/javascript');
-    res.setHeader('cache-control', ['no-cache', 'no-store', 'must-revalidate', 'max-age=0'])
+    res.setHeader('cache-control', ['no-cache', 'no-store', 'must-revalidate', 'max-age=0']);
     res.send(swFile.replace('%VERSION%', serverApi.getWorkerVersion()));
   });
 
