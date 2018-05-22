@@ -118,7 +118,12 @@ export class ServiceWorkerState {
       this.listen({
         version,
         state
-      }, resolve);
+      }, (result) => {
+        // Wait until the next tick so that any state changes take effect first
+        Promise.resolve().then(() => {
+          resolve(result);
+        });
+      });
     }), `Waiting for service worker version ${version} to be ${state} timed out`);
   }
 
