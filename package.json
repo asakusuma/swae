@@ -8,7 +8,7 @@
   "author": "asakusuma <asa.kusuma@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "serve": "tsc -p test/tsconfig.json && nodemon test/server/dist/server/index.js",
+    "serve": "tsc -p test/tsconfig.json && nodemon test/dist/test/server/standalone.js",
     "build": "tsc",
     "build-test": "tsc -p test/tsconfig.json",
     "watch": "tsc -w -p test/tsconfig.json",
