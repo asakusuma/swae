@@ -22,7 +22,7 @@ function serializeStateIdentifier({ version, state }: StateIdentifier): Serializ
   return id;
 }
 
-function addTimeout<T>(promise: Promise<T>, msg: string, timeout: number = 5000): Promise<T> {
+function addTimeout<T>(promise: Promise<T>, msg: string, timeout: number = 6000): Promise<T> {
   const timedOut: Promise<T> = new Promise((_resolve, reject) => {
     setTimeout(() => {
       reject(new Error(msg));
