@@ -151,6 +151,8 @@ export class ServiceWorkerState {
     return this.waitForState('activated', version);
   }
 
+  // Potentially tricky behavior: If you specify a version in addition to a state, will resolve if event
+  // happened in the past. If you only provide a state, will NOT resolve if event happened in past
   private waitForState(
     state: ServiceWorker.ServiceWorkerVersionStatus,
     version?: string
