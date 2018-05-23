@@ -17,7 +17,7 @@
     "build-test": "tsc -p test/tsconfig.json",
     "watch": "tsc -w -p test/tsconfig.json",
     "lint": "tslint  -c tslint.json --project tslint.json 'src/**/*.ts' 'test/server/**/*.ts' 'test/unit/**/*.ts' 'test/acceptance/**/*.ts'",
-    "test": "rm -rf test/dist && npm run lint && npm run build-test && mocha test/dist/test/**/*.spec.js --timeout 5000",
+    "test": "rm -rf test/dist && npm run lint && npm run build-test && mocha test/dist/test/**/*.spec.js --timeout 10000",
     "test-unit": "npm run build-test && mocha test/dist/test/unit/**/*.spec.js --timeout 5000",
     "document": "npm run build && api-extractor run"
   },
