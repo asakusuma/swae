@@ -153,6 +153,7 @@ export class ServiceWorkerState {
 
   // Potentially tricky behavior: If you specify a version in addition to a state, will resolve if event
   // happened in the past. If you only provide a state, will NOT resolve if event happened in past
+  // TODO: Add tests for above ^^
   private waitForState(
     state: ServiceWorker.ServiceWorkerVersionStatus,
     version?: string
