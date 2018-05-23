@@ -2,7 +2,13 @@ import { expect } from 'chai';
 import { TestSession } from './../../src';
 import { createServer } from './../server/';
 
-const session = new TestSession(createServer());
+const serverPromise = createServer();
+
+const session = new TestSession(serverPromise);
+
+before(async () => {
+  await serverPromise;
+});
 
 after(async () => {
   await session.close();
