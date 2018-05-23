@@ -11,3 +11,14 @@ addons:
       - google-chrome-beta
 env:
   - CHROME_BIN=/usr/bin/google-chrome-beta
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  local-dir: docs-output
+  keep-history: true
+  on:
+    branch: master
+script:
+  - npm run test
+  - npm run document
