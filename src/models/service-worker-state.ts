@@ -3,7 +3,7 @@ import {
 } from 'chrome-debugging-client/dist/protocol/tot';
 
 interface StateIdentifier {
-  version: string;
+  version?: string;
   state: ServiceWorker.ServiceWorkerVersionStatus;
 }
 
@@ -17,7 +17,9 @@ function identifierFromVersion(v: ServiceWorker.ServiceWorkerVersion): StateIden
 }
 
 function serializeStateIdentifier({ version, state }: StateIdentifier): SerializedStateIdentifier {
-  return `${version}:${state}`;
+  const sanitizedVersion = version ? version : '';
+  const id = `${sanitizedVersion}:${state}`;
+  return id;
 }
 
 function addTimeout<T>(promise: Promise<T>, msg: string, timeout: number = 5000): Promise<T> {
@@ -38,6 +40,43 @@ class StateIdMap<V> extends Map<any, V> {
   }
 }
 
+class StateIdArrayMap<V> extends Map<any, V[]> {
+  get(key: StateIdentifier) {
+    const versionQuery = super.get(serializeStateIdentifier(key));
+    const eventQuery = super.get(serializeStateIdentifier({
+      state: key.state
+    }));
+    if (!versionQuery && !eventQuery) {
+      return;
+    }
+    return (versionQuery || []).concat(eventQuery || []);
+  }
+  set(key: StateIdentifier, value: V[]) {
+    return super.set(serializeStateIdentifier(key), value);
+  }
+}
+
+export interface IServiceWorker {
+  skipWaiting: (params: ServiceWorker.SkipWaitingParameters) => Promise<void>;
+
+  workerErrorReported: ServiceWorker.WorkerErrorReportedHandler | null;
+  workerRegistrationUpdated: ServiceWorker.WorkerRegistrationUpdatedHandler | null;
+  workerVersionUpdated: ServiceWorker.WorkerVersionUpdatedHandler | null;
+
+  // Set all the other methods as optional until we actually start using them
+  deliverPushMessage?: (params: ServiceWorker.DeliverPushMessageParameters) => Promise<void>;
+  disable?: () => Promise<void>;
+  dispatchSyncEvent?: (params: ServiceWorker.DispatchSyncEventParameters) => Promise<void>;
+  enable?: () => Promise<void>;
+  inspectWorker?: (params: ServiceWorker.InspectWorkerParameters) => Promise<void>;
+  setForceUpdateOnPageLoad?: (params: ServiceWorker.SetForceUpdateOnPageLoadParameters) => Promise<void>;
+  startWorker?: (params: ServiceWorker.StartWorkerParameters) => Promise<void>;
+  stopAllWorkers?: () => Promise<void>;
+  stopWorker?: (params: ServiceWorker.StopWorkerParameters) => Promise<void>;
+  unregister?: (params: ServiceWorker.UnregisterParameters) => Promise<void>;
+  updateRegistration?: (params: ServiceWorker.UpdateRegistrationParameters) => Promise<void>;
+}
+
 type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
 
 export class ServiceWorkerState {
@@ -45,16 +84,16 @@ export class ServiceWorkerState {
   private active: ServiceWorker.ServiceWorkerVersion;
   private lastInstalled: ServiceWorker.ServiceWorkerVersion;
 
-  private serviceWorker: ServiceWorker;
+  private serviceWorker: IServiceWorker;
 
   private log: boolean;
 
-  private stateListeners: StateIdMap<(VersionListener)[]>;
+  private stateListeners: StateIdArrayMap<VersionListener>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
 
-  constructor(serviceWorker: ServiceWorker, log = false) {
+  constructor(serviceWorker: IServiceWorker, log = false) {
     this.versions = new Map();
-    this.stateListeners = new StateIdMap();
+    this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
     this.log = log;
     serviceWorker.workerVersionUpdated = ({ versions }) => {
@@ -98,17 +137,23 @@ export class ServiceWorkerState {
     }
   }
 
-  public waitForInstalled(version: string) {
-    return this.waitForState(version, 'installed');
+  public waitForInstalled(version?: string) {
+    if (!version && this.lastInstalled) {
+      return Promise.resolve(this.lastInstalled);
+    }
+    return this.waitForState('installed', version);
   }
 
-  public waitForActivated(version: string) {
-    return this.waitForState(version, 'activated');
+  public waitForActivated(version?: string) {
+    if (!version && this.active) {
+      return Promise.resolve(this.active);
+    }
+    return this.waitForState('activated', version);
   }
 
   private waitForState(
-    version: string,
-    state: ServiceWorker.ServiceWorkerVersionStatus
+    state: ServiceWorker.ServiceWorkerVersionStatus,
+    version?: string
   ): Promise<ServiceWorker.ServiceWorkerVersion> {
     const existingHistory = this.stateHistory.get({ version, state });
     if (existingHistory) {

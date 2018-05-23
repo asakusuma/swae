@@ -19,7 +19,7 @@ describe('Service Worker', () => {
       });
       await client.waitForServiceWorkerRegistration();
 
-      const active = await client.swState.waitForActivated('0');
+      const active = await client.swState.waitForActivated();
       expect(active.versionId).to.equal('0');
     });
   });
@@ -34,7 +34,7 @@ describe('Service Worker', () => {
       });
 
       await client.waitForServiceWorkerRegistration();
-      await client.swState.waitForActivated('0');
+      await client.swState.waitForActivated();
 
       const { body, networkResult } = await client.navigate();
 
@@ -57,7 +57,7 @@ describe('Service Worker', () => {
       });
 
       await client2.waitForServiceWorkerRegistration();
-      const sw = await client2.swState.waitForActivated('0');
+      const sw = await client2.swState.waitForActivated();
 
       const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
       expect(controlledClients).to.equal(2);
@@ -93,7 +93,7 @@ describe('Service Worker', () => {
       });
       await client.waitForServiceWorkerRegistration();
 
-      await client.swState.waitForActivated('0');
+      await client.swState.waitForActivated();
 
       await app.getTestServer().incrementVersion();
 

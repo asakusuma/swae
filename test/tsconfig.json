@@ -17,6 +17,7 @@
     "./server/standalone.ts"
   ],
   "include": [
-    "./specs/*.ts"
+    "./acceptance/*.ts",
+    "./unit/*.ts"
   ]
 }

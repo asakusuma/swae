@@ -3,8 +3,8 @@ import { ApplicationEnvironment } from './app-env';
 import { TestServerApi } from './test-server-api';
 
 // Import .env file for setting CHROME_BIN
-import dotenv from 'dotenv';
-dotenv.config();
+import { config } from 'dotenv';
+config();
 
 export class TestSession<S extends TestServerApi = TestServerApi> {
   public testServerPromise: Promise<S>;
