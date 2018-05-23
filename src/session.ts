@@ -24,6 +24,9 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   private async runDebuggingSession(test: (appEnv: ApplicationEnvironment<S>) => Promise<void>, server: S) {
     return createSession(async (session) => {
       const executablePath = process.env.CHROME_BIN;
+      if (!executablePath) {
+        throw new Error('The node CHROME_BIN environment variable must be set');
+      }
       const browser = await session.spawnBrowser('exact', {
         executablePath,
         additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
