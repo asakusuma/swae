@@ -17,10 +17,17 @@ function runtimeEvaluate<T>(client: IDebuggingProtocolClient, func: () => T) {
   });
 }
 
+/**
+ * @public
+ */
 export interface EvaluateFunction {
   <T>(toEvaluate: () => T): Promise<T>;
 }
 
+/**
+ * Models a particular client, usually a Chrome tab
+ * @public
+ */
 export class ClientEnvironment {
   public swState: ServiceWorkerState;
   public page: Page;

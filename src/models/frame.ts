@@ -1,5 +1,9 @@
 import { Network, Page } from 'chrome-debugging-client/dist/protocol/tot';
 
+/**
+ * Represents a frame transition from one page to another
+ * @public
+ */
 export class FrameNavigation {
   private response: Network.ResponseReceivedParameters;
   private resolve: (res: PageNavigateResult) => void;
@@ -29,6 +33,10 @@ export class FrameNavigation {
   }
 }
 
+/**
+ * Keeps track of in-flight navigations of various frames
+ * @public
+ */
 export class FrameStore {
   private frames: { [frameId: string]: FrameNavigation };
 
@@ -58,11 +66,19 @@ export class FrameStore {
   }
 }
 
+/**
+ * Represents the result of a navigation
+ * @public
+ */
 export interface PageNavigateResult {
   networkResult: Network.ResponseReceivedParameters;
   frame: Page.Frame;
 }
 
+/**
+ * Represents the result of a navigation that includes a body response
+ * @public
+ */
 export interface NavigateResult extends PageNavigateResult {
   body: Network.GetResponseBodyReturn;
 }

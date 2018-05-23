@@ -2,6 +2,12 @@ import { IAPIClient, ISession, ITabResponse } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
 
+/**
+ * API for interacting with the complete running test application
+ * @remarks
+ * This is the main point of interaction between test code and swae
+ * @public
+ */
 export class ApplicationEnvironment<S extends TestServerApi = TestServerApi> {
   private client: IAPIClient;
   private session: ISession;

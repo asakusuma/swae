@@ -6,6 +6,10 @@ import { TestServerApi } from './test-server-api';
 import { config } from 'dotenv';
 config();
 
+/**
+ * A test session, including a headless chrome instance
+ * @public
+ */
 export class TestSession<S extends TestServerApi = TestServerApi> {
   public testServerPromise: Promise<S>;
   // private securityOrigin: string = 'http://localhost'; // TODO: make this dynamic
