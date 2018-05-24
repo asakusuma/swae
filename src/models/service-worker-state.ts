@@ -84,6 +84,10 @@ export interface IServiceWorker {
 
 type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
 
+/**
+ * ServiceWorkerState config options
+ * @internal
+ */
 export interface IServiceWorkerStateOptions {
   log?: boolean;
   throwOnError?: boolean;
@@ -94,7 +98,7 @@ export interface IServiceWorkerStateOptions {
  * @remarks
  * Effectively a wrapper around the {@link https://chromedevtools.github.io/devtools-protocol/tot/ServiceWorker
  * | ServiceWorker} domain of the Chrome DevTools Protocol.
- * @public
+ * @internal
  */
 export class ServiceWorkerState {
   private versions: Map<number, ServiceWorker.ServiceWorkerVersion>;
