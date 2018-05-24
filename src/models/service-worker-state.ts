@@ -149,17 +149,18 @@ export class ServiceWorkerState {
     this.versions.set(Number(version.versionId), version);
     const id = identifierFromVersion(version);
     this.stateHistory.set(id, version);
-    const listeners = this.stateListeners.get(id);
-    if (listeners) {
-      listeners.forEach((listener) => {
-        listener(version);
-      });
-    }
 
     if (version.status === 'activated') {
       this.handleActivated(version);
     } else if (version.status === 'installed') {
       this.handleInstalled(version);
+    }
+
+    const listeners = this.stateListeners.get(id);
+    if (listeners) {
+      listeners.forEach((listener) => {
+        listener(version);
+      });
     }
   }
 
@@ -179,6 +180,14 @@ export class ServiceWorkerState {
       return Promise.resolve(this.active);
     }
     return this.waitForState('activated', version);
+  }
+
+  public waitForActivation() {
+    return this.waitForState('activated');
+  }
+
+  public waitForInstallation() {
+    return this.waitForState('installed');
   }
 
   // Potentially tricky behavior: If you specify a version in addition to a state, will resolve if event
