@@ -198,7 +198,7 @@ export class ServiceWorkerState {
           resolve(result);
         });
       });
-    }), `Waiting for service worker version ${version} to be ${state} timed out`);
+    }), `Waiting for service worker version ${version} to be ${state} timed out`, 10000);
   }
 
   private handleActivated(version: ServiceWorker.ServiceWorkerVersion) {
