@@ -56,6 +56,10 @@ export class ClientEnvironment {
     this.page.frameNavigated = this.frameStore.onNavigationComplete.bind(this.frameStore);
   }
 
+  public debug() {
+    this.swState.debug();
+  }
+
   public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string) {
     const instance = new ClientEnvironment(debuggerClient, rootUrl);
     await Promise.all([

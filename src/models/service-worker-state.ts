@@ -130,7 +130,7 @@ export class ServiceWorkerState {
   }
   private recordVersion(version: ServiceWorker.ServiceWorkerVersion) {
     if (this.log) {
-      console.log('Service Worker Version', version);
+      console.log('Service Worker State', version.status, version.runningStatus, version);
     }
     this.versions.set(Number(version.versionId), version);
     const id = identifierFromVersion(version);
@@ -147,6 +147,10 @@ export class ServiceWorkerState {
     } else if (version.status === 'installed') {
       this.handleInstalled(version);
     }
+  }
+
+  public debug() {
+    this.log = true;
   }
 
   public waitForInstalled(version?: string) {

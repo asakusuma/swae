@@ -79,6 +79,10 @@ describe('Service Worker', () => {
   it('active version should only change after skipWaiting', async () => {
     await session.run(async (testEnv) => {
       const client = testEnv.getActiveTabClient();
+
+      // Turn on for flaky test
+      client.debug();
+
       await client.navigate();
 
       await client.evaluate(function() {
