@@ -2,6 +2,12 @@ import { expect } from 'chai';
 import { TestSession } from './../../src';
 import { createServer } from './../server/';
 
+export function wait(time: number) {
+  return new Promise((r) => {
+    setTimeout(r, time);
+  });
+}
+
 const session = new TestSession(createServer());
 before(session.ready.bind(session));
 after(session.close.bind(session));
@@ -74,6 +80,35 @@ describe('Service Worker', () => {
       expect(navResult2.networkResult.response.fromServiceWorker).to.be.true;
       expect(navResult2.body.body.indexOf('from-service-worker') > 0).to.be.true;
     });
+  });
+
+  // TODO: Pass thrown errors into promise that is part of the session
+  xit('should throw on service worker error by default', async () => {
+    const shouldThrow = async () => {
+      await session.run(async (testEnv) => {
+        const client = testEnv.getActiveTabClient();
+        await client.navigate();
+
+        await client.evaluate(function() {
+          return navigator.serviceWorker.register('/sw.js');
+        });
+
+        await client.swState.waitForActivated();
+
+        await client.evaluate(function() {
+          return navigator.serviceWorker.getRegistration().then((sw) => {
+            if (sw && sw.active) {
+              sw.active.postMessage({
+                request: 'throwError'
+              });
+            }
+          });
+        });
+
+        await wait(1000);
+      });
+    };
+    expect(shouldThrow).to.throw(/Postmessage Test Error/);
   });
 
   it('active version should only change after skipWaiting', async () => {

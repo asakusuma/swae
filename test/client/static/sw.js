@@ -11,6 +11,12 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(addMarker(e.request));
   }
 });
+self.addEventListener('message', (e) => {
+  const data = e.data;
+  if (data.request === 'throwError') {
+    throw new Error('Postmessage Test Error');
+  }
+});
 
 function addMarker(req) {
   return fetch(req).then((res) => {

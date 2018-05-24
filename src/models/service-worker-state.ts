@@ -84,6 +84,11 @@ export interface IServiceWorker {
 
 type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
 
+export interface IServiceWorkerStateOptions {
+  log?: boolean;
+  throwOnError?: boolean;
+}
+
 /**
  * Models the state of Service Workers for a particular client
  * @remarks
@@ -103,11 +108,13 @@ export class ServiceWorkerState {
   private stateListeners: StateIdArrayMap<VersionListener>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
 
-  constructor(serviceWorker: IServiceWorker, log = false) {
+  constructor(serviceWorker: IServiceWorker, options: IServiceWorkerStateOptions = {}) {
     this.versions = new Map();
     this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
-    this.log = log;
+    this.log = !!options.log;
+    const throwOnError = !(!!options.throwOnError);
+
     serviceWorker.workerVersionUpdated = ({ versions }) => {
       for (let version of versions) {
         this.recordVersion(version);
@@ -116,6 +123,9 @@ export class ServiceWorkerState {
 
     serviceWorker.workerErrorReported = (err) => {
       console.error('Service worker error:', err.errorMessage);
+      if (throwOnError) {
+        throw err;
+      }
     };
 
     this.serviceWorker = serviceWorker;
