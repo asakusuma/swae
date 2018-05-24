@@ -20,5 +20,5 @@ deploy:
   on:
     branch: master
 script:
-  - npm run test
-  - npm run document
+  - yarn run test
+  - yarn run document

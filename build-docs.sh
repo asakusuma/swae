@@ -1,4 +1,4 @@
-npm run build &&
+yarn run build &&
 api-extractor run &&
 rm -rf docs-output &&
 mkdir docs-output &&
