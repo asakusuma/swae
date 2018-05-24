@@ -17,7 +17,7 @@
     "build-test": "tsc -p test/tsconfig.json",
     "watch": "tsc -w -p test/tsconfig.json",
     "lint": "tslint  -c tslint.json --project tslint.json 'src/**/*.ts' 'test/server/**/*.ts' 'test/unit/**/*.ts' 'test/acceptance/**/*.ts'",
-    "test": "rm -rf test/dist && yarn run lint && yarn run build-test && mocha test/dist/test/**/*.spec.js --timeout 10000",
+    "test": "rm -rf test/dist && yarn run lint && yarn run build-test && mocha test/dist/test/**/*.spec.js --timeout 15000",
     "test-unit": "yarn run build-test && mocha test/dist/test/unit/**/*.spec.js --timeout 5000",
     "document": "./build-docs.sh"
   },
