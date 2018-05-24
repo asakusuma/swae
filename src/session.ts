@@ -1,4 +1,4 @@
-import { createSession } from 'chrome-debugging-client';
+import { createSession, ISession } from 'chrome-debugging-client';
 import { TestEnvironment } from './app-env';
 import { TestServerApi } from './test-server-api';
 
@@ -25,22 +25,27 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
     return server.close();
   }
 
-  private async runDebuggingSession(test: (appEnv: TestEnvironment<S>) => Promise<void>, server: S) {
-    return createSession(async (session) => {
-      const executablePath = process.env.CHROME_BIN;
-      if (!executablePath) {
-        throw new Error('The node CHROME_BIN environment variable must be set');
-      }
-      const browser = await session.spawnBrowser('exact', {
+  private async spawnBrowser(session: ISession) {
+    const executablePath = process.env.CHROME_BIN;
+    if (!executablePath) {
+      throw new Error('The node CHROME_BIN environment variable must be set');
+    }
+    try {
+      return await session.spawnBrowser('exact', {
         executablePath,
         additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
         windowSize: { width: 640, height: 320 }
-      }).catch((err) => {
-        console.error(`Error encountered when spawning chrome from ${executablePath}.
-          Are you sure CHROME_BIN is set correctly?`);
-        throw err;
       });
+    } catch (err) {
+      console.error(`Error encountered when spawning chrome from ${executablePath}.
+          Are you sure CHROME_BIN is set correctly?`);
+      throw err;
+    }
+  }
 
+  private async runDebuggingSession(test: (appEnv: TestEnvironment<S>) => Promise<void>, server: S) {
+    return createSession(async (session) => {
+      const browser = await this.spawnBrowser(session);
       const apiClient = session.createAPIClient('localhost', browser.remoteDebuggingPort);
 
       const appEnv = await TestEnvironment.build(apiClient, session, server);
