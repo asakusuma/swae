@@ -1,24 +1,4 @@
 // @public
-class ApplicationEnvironment<S extends TestServerApi = TestServerApi> {
-  // (undocumented)
-  static build<S extends TestServerApi = TestServerApi>(client: IAPIClient, session: ISession, testServer: S): Promise<ApplicationEnvironment<S>>;
-  // (undocumented)
-  getActiveTabClient(): ClientEnvironment;
-  // (undocumented)
-  getTestServer(): S;
-  // (undocumented)
-  newTab(): Promise<ClientEnvironment>;
-  // (undocumented)
-  openAndActivateTab(): Promise<ClientEnvironment>;
-  // (undocumented)
-  openLastTab(): Promise<void>;
-  // (undocumented)
-  openTabById(id: string): Promise<void>;
-  // (undocumented)
-  openTabByIndex(index: number): Promise<void>;
-}
-
-// @public
 class ClientEnvironment {
   // (undocumented)
   static build(debuggerClient: IDebuggingProtocolClient, rootUrl: string): Promise<ClientEnvironment>;
@@ -138,6 +118,26 @@ class ServiceWorkerState {
 }
 
 // @public
+class TestEnvironment<S extends TestServerApi = TestServerApi> {
+  // (undocumented)
+  static build<S extends TestServerApi = TestServerApi>(client: IAPIClient, session: ISession, testServer: S): Promise<TestEnvironment<S>>;
+  // (undocumented)
+  getActiveTabClient(): ClientEnvironment;
+  // (undocumented)
+  getTestServer(): S;
+  // (undocumented)
+  newTab(): Promise<ClientEnvironment>;
+  // (undocumented)
+  openAndActivateTab(): Promise<ClientEnvironment>;
+  // (undocumented)
+  openLastTab(): Promise<void>;
+  // (undocumented)
+  openTabById(id: string): Promise<void>;
+  // (undocumented)
+  openTabByIndex(index: number): Promise<void>;
+}
+
+// @public
 interface TestServerApi {
   // (undocumented)
   close: () => void;
@@ -153,7 +153,9 @@ class TestSession<S extends TestServerApi = TestServerApi> {
   // (undocumented)
   close(): Promise<void>;
   // (undocumented)
-  run(test: (appEnv: ApplicationEnvironment<S>) => Promise<void>): Promise<void>;
+  ready(): Promise<void>;
+  // (undocumented)
+  run(test: (appEnv: TestEnvironment<S>) => Promise<void>): Promise<void>;
   // (undocumented)
   testServerPromise: Promise<S>;
 }
