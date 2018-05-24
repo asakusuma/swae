@@ -10,13 +10,6 @@ import { IDebuggingProtocolClient } from 'chrome-debugging-client';
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
 
-function runtimeEvaluate<T>(client: IDebuggingProtocolClient, func: () => T) {
-  return client.send<T>('Runtime.evaluate', {
-    expression: `(${func.toString()}())`,
-    awaitPromise: true
-  });
-}
-
 /**
  * @public
  */
@@ -90,8 +83,12 @@ export class ClientEnvironment {
     });
   }
 
-  public evaluate<T>(toEvaluate: () => T) {
-    return runtimeEvaluate(this.debuggerClient, toEvaluate);
+  public evaluate<T>(code: string | (() => T)): Promise<T> {
+    const expression = typeof code === 'string' ? code : `(${code.toString()}())`;
+    return this.debuggerClient.send('Runtime.evaluate', {
+      expression,
+      awaitPromise: true
+    });
   }
 
   public async navigate(targetUrl?: string): Promise<NavigateResult> {
