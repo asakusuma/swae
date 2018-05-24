@@ -8,8 +8,8 @@ after(session.close.bind(session));
 
 describe('Service Worker', () => {
   it('should have a version', async () => {
-    await session.run(async (app) => {
-      const client = app.getActiveTabClient();
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -23,8 +23,8 @@ describe('Service Worker', () => {
   });
 
   it('should intercept basepage request and add meta tag', async () => {
-    await session.run(async (app) => {
-      const client = app.getActiveTabClient();
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -42,11 +42,11 @@ describe('Service Worker', () => {
   });
 
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
-    await session.run(async (app) => {
-      const client1 = app.getActiveTabClient();
+    await session.run(async (testEnv) => {
+      const client1 = testEnv.getActiveTabClient();
       await client1.navigate();
 
-      const client2 = await app.openAndActivateTab();
+      const client2 = await testEnv.openAndActivateTab();
 
       await client2.navigate();
 
@@ -70,7 +70,7 @@ describe('Service Worker', () => {
         '2nd tab with registered service worker should add meta tag').to.be.true;
 
       // Go back to the first tab
-      await app.openTabByIndex(0);
+      await testEnv.openTabByIndex(0);
 
       const navResult2 = await client1.navigate();
 
@@ -80,8 +80,8 @@ describe('Service Worker', () => {
   });
 
   it('active version should only change after skipWaiting', async () => {
-    await session.run(async (app) => {
-      const client = app.getActiveTabClient();
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -93,7 +93,7 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
-      await app.getTestServer().incrementVersion();
+      await testEnv.getTestServer().incrementVersion();
 
       await client.navigate();
 

@@ -8,7 +8,7 @@ import { TestServerApi } from './test-server-api';
  * This is the main point of interaction between test code and swae
  * @public
  */
-export class ApplicationEnvironment<S extends TestServerApi = TestServerApi> {
+export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   private client: IAPIClient;
   private session: ISession;
   private testServer: S;
@@ -28,7 +28,7 @@ export class ApplicationEnvironment<S extends TestServerApi = TestServerApi> {
     const tabs = await client.listTabs();
     const initialTab = tabs[0];
 
-    const appEnv = new ApplicationEnvironment(client, session, testServer);
+    const appEnv = new TestEnvironment(client, session, testServer);
     await appEnv.buildClientEnv(initialTab);
     await appEnv.activateTab(initialTab.id);
     return appEnv;

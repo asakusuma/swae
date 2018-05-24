@@ -1,5 +1,5 @@
 import { createSession } from 'chrome-debugging-client';
-import { ApplicationEnvironment } from './app-env';
+import { TestEnvironment } from './app-env';
 import { TestServerApi } from './test-server-api';
 
 // Import .env file for setting CHROME_BIN
@@ -25,7 +25,7 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
     return server.close();
   }
 
-  private async runDebuggingSession(test: (appEnv: ApplicationEnvironment<S>) => Promise<void>, server: S) {
+  private async runDebuggingSession(test: (appEnv: TestEnvironment<S>) => Promise<void>, server: S) {
     return createSession(async (session) => {
       const executablePath = process.env.CHROME_BIN;
       if (!executablePath) {
@@ -39,12 +39,12 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
 
       const apiClient = session.createAPIClient('localhost', browser.remoteDebuggingPort);
 
-      const appEnv = await ApplicationEnvironment.build(apiClient, session, server);
+      const appEnv = await TestEnvironment.build(apiClient, session, server);
       await test(appEnv);
     });
   }
 
-  public async run(test: (appEnv: ApplicationEnvironment<S>) => Promise<void>) {
+  public async run(test: (appEnv: TestEnvironment<S>) => Promise<void>) {
     const server = await this.testServerPromise;
     await this.runDebuggingSession(test, server);
     await server.reset();
