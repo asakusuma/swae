@@ -35,6 +35,10 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
         executablePath,
         additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
         windowSize: { width: 640, height: 320 }
+      }).catch((err) => {
+        console.error(`Error encountered when spawning chrome from ${executablePath}.
+          Are you sure CHROME_BIN is set correctly?`);
+        throw err;
       });
 
       const apiClient = session.createAPIClient('localhost', browser.remoteDebuggingPort);
