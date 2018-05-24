@@ -2,17 +2,9 @@ import { expect } from 'chai';
 import { TestSession } from './../../src';
 import { createServer } from './../server/';
 
-const serverPromise = createServer();
-
-const session = new TestSession(serverPromise);
-
-before(async () => {
-  await serverPromise;
-});
-
-after(async () => {
-  await session.close();
-});
+const session = new TestSession(createServer());
+before(session.ready.bind(session));
+after(session.close.bind(session));
 
 describe('Service Worker', () => {
   it('should have a version', async () => {

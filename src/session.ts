@@ -16,6 +16,10 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   constructor(testServerPromise: Promise<S>) {
     this.testServerPromise = testServerPromise;
   }
+  public async ready(): Promise<void> {
+    return this.testServerPromise
+      .then(() => {}); // Ensure void return
+  }
   public async close() {
     const server = await this.testServerPromise;
     return server.close();
