@@ -21,4 +21,4 @@ env:
 #    branch: master
 script:
   - yarn run test
-  - yarn run document
+#  - yarn run document
