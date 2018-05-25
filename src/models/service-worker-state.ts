@@ -93,6 +93,8 @@ export interface IServiceWorkerStateOptions {
   throwOnError?: boolean;
 }
 
+export type ServiceWorkerErrorCallback = (err: ServiceWorker.ServiceWorkerErrorMessage) => void;
+
 /**
  * Models the state of Service Workers for a particular client
  * @remarks
@@ -112,12 +114,16 @@ export class ServiceWorkerState {
   private stateListeners: StateIdArrayMap<VersionListener>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
 
+  private errorCallbacks: ServiceWorkerErrorCallback[];
+
   constructor(serviceWorker: IServiceWorker, options: IServiceWorkerStateOptions = {}) {
     this.versions = new Map();
     this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
     this.log = !!options.log;
     const throwOnError = !(!!options.throwOnError);
+
+    this.errorCallbacks = [];
 
     serviceWorker.workerVersionUpdated = ({ versions }) => {
       for (let version of versions) {
@@ -127,12 +133,17 @@ export class ServiceWorkerState {
 
     serviceWorker.workerErrorReported = (err) => {
       console.error('Service worker error:', err.errorMessage);
-      if (throwOnError) {
+      if (this.errorCallbacks.length > 0) {
+        this.errorCallbacks.forEach((cb) => cb(err.errorMessage));
+      } else if (throwOnError) {
         throw err;
       }
     };
 
     this.serviceWorker = serviceWorker;
+  }
+  public catchErrors(cb: ServiceWorkerErrorCallback) {
+    this.errorCallbacks.push(cb);
   }
   private listen(id: StateIdentifier, listener: VersionListener) {
     let listeners = this.stateListeners.get(id);
