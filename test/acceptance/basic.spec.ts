@@ -154,3 +154,29 @@ describe('Service Worker', () => {
     });
   });
 });
+
+describe('Cache', () => {
+  it('should be gone after delete', async () => {
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
+      await client.evaluate(function() {
+        return caches.open('test-cache').then((cache) => {
+          return cache.put('testpath', new Response(''));
+        });
+      });
+      const names = await client.cacheStorage.requestCacheNames({
+        securityOrigin: client.rootUrl
+      });
+      expect(names.caches.length).to.equal(1);
+      for (let i = 0; i < names.caches.length; i++) {
+        await client.cacheStorage.deleteCache({
+          cacheId: names.caches[i].cacheId
+        });
+      }
+      const result = await client.cacheStorage.requestCacheNames({
+        securityOrigin: client.rootUrl
+      });
+      expect(result.caches.length).to.equal(0);
+    });
+  });
+});
