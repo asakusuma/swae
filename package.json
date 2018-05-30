@@ -22,8 +22,7 @@
     "document": "./build-docs.sh"
   },
   "dependencies": {
-    "chrome-debugging-client": "^0.6.0",
-    "@types/dotenv": "^4.0.3"
+    "chrome-debugging-client": "^0.6.0"
   },
   "devDependencies": {
     "@microsoft/api-documenter": "^1.2.1",
