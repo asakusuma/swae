@@ -3,10 +3,6 @@
 
 A service worker testing framework in the early stages of development. Effectively a big wrapper around [chrome-debugging-client](https://github.com/devtrace/chrome-debugging-client), which is node client for interacting with [Headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome). Built with [TypeScript](https://www.typescriptlang.org/).
 
-## Setup
-
-Ensure your project sets the node `CHROME_BIN` environment varible. You can use a number of methods to set the variable, but [dotenv](https://github.com/motdotla/dotenv) is recommended.
-
 ## Example
 
 ```TypeScript

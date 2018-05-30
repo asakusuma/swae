@@ -2,10 +2,6 @@ import { createSession, ISession } from 'chrome-debugging-client';
 import { TestEnvironment } from './app-env';
 import { TestServerApi } from './test-server-api';
 
-// Import .env file for setting CHROME_BIN
-import { config } from 'dotenv';
-config();
-
 /**
  * A test session, including a headless chrome instance
  * @public
@@ -26,19 +22,14 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   }
 
   private async spawnBrowser(session: ISession) {
-    const executablePath = process.env.CHROME_BIN;
-    if (!executablePath) {
-      throw new Error('The node CHROME_BIN environment variable must be set');
-    }
+
     try {
-      return await session.spawnBrowser('exact', {
-        executablePath,
+      return await session.spawnBrowser({
         additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
         windowSize: { width: 640, height: 320 }
       });
     } catch (err) {
-      console.error(`Error encountered when spawning chrome from ${executablePath}.
-          Are you sure CHROME_BIN is set correctly?`);
+      console.error(`Error encountered when spawning chrome: ${err.message}`);
       throw err;
     }
   }
