@@ -90,7 +90,6 @@ type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
  */
 export interface IServiceWorkerStateOptions {
   log?: boolean;
-  throwOnError?: boolean;
 }
 
 export type ServiceWorkerErrorCallback = (err: ServiceWorker.ServiceWorkerErrorMessage) => void;
@@ -110,6 +109,7 @@ export class ServiceWorkerState {
   private serviceWorker: IServiceWorker;
 
   private log: boolean;
+  private errors: ServiceWorker.ServiceWorkerErrorMessage[];
 
   private stateListeners: StateIdArrayMap<VersionListener>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
@@ -121,9 +121,10 @@ export class ServiceWorkerState {
     this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
     this.log = !!options.log;
-    const throwOnError = !(!!options.throwOnError);
 
     this.errorCallbacks = [];
+
+    this.errors = [];
 
     serviceWorker.workerVersionUpdated = ({ versions }) => {
       for (let version of versions) {
@@ -131,19 +132,37 @@ export class ServiceWorkerState {
       }
     };
 
-    serviceWorker.workerErrorReported = (err) => {
-      console.error('Service worker error:', err.errorMessage);
-      if (this.errorCallbacks.length > 0) {
-        this.errorCallbacks.forEach((cb) => cb(err.errorMessage));
-      } else if (throwOnError) {
-        throw err;
-      }
+    serviceWorker.workerErrorReported = ({ errorMessage }) => {
+      this.errors.push(errorMessage);
     };
 
     this.serviceWorker = serviceWorker;
   }
   public catchErrors(cb: ServiceWorkerErrorCallback) {
     this.errorCallbacks.push(cb);
+  }
+  public getErrors() {
+    return this.errors;
+  }
+  public ensureNoErrors() {
+    const errors = this.errors;
+    this.errors = [];
+    const cbs = this.errorCallbacks.length;
+    if (errors.length) {
+      // If we are handling the errors via registered callbacks, delegate
+      if (cbs > 0) {
+        for (let i = 0; i < errors.length; i++) {
+          for (let x = 0; x < cbs; x++) {
+            this.errorCallbacks[x](errors[i]);
+          }
+        }
+      } else {
+        // Otherwise throw and log
+
+        // TODO: Better surface all the errors
+        throw new Error(`Uncaught error thrown in Service Worker: ${errors[0].errorMessage}`);
+      }
+    }
   }
   private listen(id: StateIdentifier, listener: VersionListener) {
     let listeners = this.stateListeners.get(id);

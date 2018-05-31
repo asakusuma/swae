@@ -82,9 +82,8 @@ describe('Service Worker', () => {
     });
   });
 
-  // TODO: Pass thrown errors into promise that is part of the session
-  xit('should throw on service worker error by default', async () => {
-    const shouldThrow = async () => {
+  it('should throw on service worker error by default', async () => {
+    const shouldReject = async () => {
       await session.run(async (testEnv) => {
         const client = testEnv.getActiveTabClient();
         await client.navigate();
@@ -108,15 +107,45 @@ describe('Service Worker', () => {
         await wait(1000);
       });
     };
-    expect(shouldThrow).to.throw(/Postmessage Test Error/);
+    return shouldReject().then(() => {
+      throw new Error('Promise should not resolve');
+    }, (err) => {
+      expect(err.message).to.match(/Postmessage Test Error/);
+    });
+  });
+
+  it('should not throw on service worker error if error is caught', async () => {
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
+
+      // Catch errors and don't re-throw
+      client.swState.catchErrors(() => {});
+
+      await client.navigate();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.register('/sw.js');
+      });
+
+      await client.swState.waitForActivated();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.getRegistration().then((sw) => {
+          if (sw && sw.active) {
+            sw.active.postMessage({
+              request: 'throwError'
+            });
+          }
+        });
+      });
+
+      await wait(1000);
+    });
   });
 
   it('active version should only change after skipWaiting', async () => {
     await session.run(async (testEnv) => {
       const client = testEnv.getActiveTabClient();
-
-      // Turn on for flaky test
-      client.debug();
 
       await client.navigate();
 

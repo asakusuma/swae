@@ -80,6 +80,17 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     }
   }
 
+  public async closeTab() {
+    // TODO: Call ensureNoErrors() on the tab
+  }
+
+  public async close() {
+    const tabIds = Object.keys(this.tabIdToClientEnv);
+    return Promise.all(tabIds.map((tabId) => {
+      return this.tabIdToClientEnv[tabId].close();
+    }));
+  }
+
   private async buildClientEnv(tab: ITabResponse): Promise<ClientEnvironment> {
     const dp = await this.session.openDebuggingProtocol(tab.webSocketDebuggerUrl || '');
     const client = await ClientEnvironment.build(dp, this.testServer.rootUrl);

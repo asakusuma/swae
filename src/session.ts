@@ -41,6 +41,7 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
 
       const appEnv = await TestEnvironment.build(apiClient, session, server);
       await test(appEnv);
+      await appEnv.close();
     });
   }
 

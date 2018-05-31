@@ -71,6 +71,7 @@ export class ClientEnvironment {
       this.indexedDB.disable(),
       this.network.disable()
     ]);
+    this.swState.ensureNoErrors();
   }
 
   public waitForServiceWorkerRegistration() {
