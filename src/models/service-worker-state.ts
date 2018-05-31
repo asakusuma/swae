@@ -2,23 +2,27 @@ import {
   ServiceWorker
 } from 'chrome-debugging-client/dist/protocol/tot';
 
-interface StateIdentifier {
+export interface VersionStatusIdentifier {
+  status: ServiceWorker.ServiceWorkerVersionStatus;
   version?: string;
-  state: ServiceWorker.ServiceWorkerVersionStatus;
+  runningStatus?: ServiceWorker.ServiceWorkerVersionRunningStatus;
 }
 
 type SerializedStateIdentifier = string;
 
-function identifierFromVersion(v: ServiceWorker.ServiceWorkerVersion): StateIdentifier {
+function identifierFromVersion(v: ServiceWorker.ServiceWorkerVersion): VersionStatusIdentifier {
   return {
     version: v.versionId,
-    state: v.status
+    status: v.status,
+    runningStatus: v.runningStatus
   };
 }
 
-function serializeStateIdentifier({ version, state }: StateIdentifier): SerializedStateIdentifier {
+function serializeStateIdentifier({ version, status, runningStatus }:
+  VersionStatusIdentifier): SerializedStateIdentifier {
   const sanitizedVersion = version ? version : '';
-  const id = `${sanitizedVersion}:${state}`;
+  const sanitizedRunningStatus = runningStatus ? runningStatus : '';
+  const id = `${sanitizedVersion}:${status}:${sanitizedRunningStatus}`;
   return id;
 }
 
@@ -32,26 +36,27 @@ function addTimeout<T>(promise: Promise<T>, msg: string, timeout: number = 6000)
 }
 
 class StateIdMap<V> extends Map<any, V> {
-  get(key: StateIdentifier) {
+  get(key: VersionStatusIdentifier) {
     return super.get(serializeStateIdentifier(key));
   }
-  set(key: StateIdentifier, value: V) {
+  set(key: VersionStatusIdentifier, value: V) {
     return super.set(serializeStateIdentifier(key), value);
   }
 }
 
 class StateIdArrayMap<V> extends Map<any, V[]> {
-  get(key: StateIdentifier) {
+  get(key: VersionStatusIdentifier) {
     const versionQuery = super.get(serializeStateIdentifier(key));
     const eventQuery = super.get(serializeStateIdentifier({
-      state: key.state
+      status: key.status,
+      runningStatus: key.runningStatus
     }));
     if (!versionQuery && !eventQuery) {
       return;
     }
     return (versionQuery || []).concat(eventQuery || []);
   }
-  set(key: StateIdentifier, value: V[]) {
+  set(key: VersionStatusIdentifier, value: V[]) {
     return super.set(serializeStateIdentifier(key), value);
   }
 }
@@ -164,7 +169,7 @@ export class ServiceWorkerState {
       }
     }
   }
-  private listen(id: StateIdentifier, listener: VersionListener) {
+  private listen(id: VersionStatusIdentifier, listener: VersionListener) {
     let listeners = this.stateListeners.get(id);
     if (!listeners) {
       listeners = [];
@@ -202,14 +207,20 @@ export class ServiceWorkerState {
     if (!version && this.lastInstalled) {
       return Promise.resolve(this.lastInstalled);
     }
-    return this.waitForState('installed', version);
+    return this.waitForState({
+      status: 'installed',
+      version
+    });
   }
 
   public waitForActivated(version?: string) {
     if (!version && this.active) {
       return Promise.resolve(this.active);
     }
-    return this.waitForState('activated', version);
+    return this.waitForState({
+      status: 'activated',
+      version
+    });
   }
 
   public waitForActivation() {
@@ -223,25 +234,25 @@ export class ServiceWorkerState {
   // Potentially tricky behavior: If you specify a version in addition to a state, will resolve if event
   // happened in the past. If you only provide a state, will NOT resolve if event happened in past
   // TODO: Add tests for above ^^
-  private waitForState(
-    state: ServiceWorker.ServiceWorkerVersionStatus,
-    version?: string
-  ): Promise<ServiceWorker.ServiceWorkerVersion> {
-    const existingHistory = this.stateHistory.get({ version, state });
+  // TODO: Need a more robust event listening engine now that we have 3 different properties on VersionStatusIdentifier
+  public waitForState(arg: VersionStatusIdentifier | ServiceWorker.ServiceWorkerVersionStatus):
+    Promise<ServiceWorker.ServiceWorkerVersion> {
+    const id: VersionStatusIdentifier = typeof arg === 'string' ? { status: arg } : arg;
+    if (!id.runningStatus) {
+      id.runningStatus = 'running';
+    }
+    const existingHistory = this.stateHistory.get(id);
     if (existingHistory) {
       return Promise.resolve(existingHistory);
     }
     return addTimeout(new Promise((resolve) => {
-      this.listen({
-        version,
-        state
-      }, (result) => {
+      this.listen(id, (result) => {
         // Wait until the next tick so that any state changes take effect first
         Promise.resolve().then(() => {
           resolve(result);
         });
       });
-    }), `Waiting for service worker version ${version} to be ${state} timed out`, 10000);
+    }), `Waiting for service worker version ${id.version} to be ${id.status} timed out`, 10000);
   }
 
   private handleActivated(version: ServiceWorker.ServiceWorkerVersion) {
