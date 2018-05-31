@@ -131,6 +131,9 @@ export class ServiceWorkerState {
 
     this.errors = [];
 
+    // TODO: Somehow add ability to listen to network requests from the service worker
+    // The service worker might be its own client
+
     serviceWorker.workerVersionUpdated = ({ versions }) => {
       for (let version of versions) {
         this.recordVersion(version);
