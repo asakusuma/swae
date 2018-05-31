@@ -33,5 +33,80 @@ describe('Service Worker State', () => {
       const version = await activatedPromise;
       expect(version.versionId).to.equal('0');
     });
+
+    it('should wait for activation event when passed a version after the event happens', async () => {
+      const sw = new TestServiceWorker();
+      const state = new ServiceWorkerState(sw);
+      sw.workerVersionUpdated({
+        versions: [{
+          versionId: '1',
+          registrationId: '0',
+          scriptURL: '',
+          runningStatus: 'running',
+          status: 'activated'
+        }]
+      });
+
+      const version = await state.waitForActivated('1');
+      expect(version.versionId).to.equal('1');
+    });
+
+    it('should wait for activation event when passed a version before the event happens', async () => {
+      const sw = new TestServiceWorker();
+      const state = new ServiceWorkerState(sw);
+      const activatedPromise = state.waitForActivated('1');
+      sw.workerVersionUpdated({
+        versions: [{
+          versionId: '1',
+          registrationId: '0',
+          scriptURL: '',
+          runningStatus: 'running',
+          status: 'activated'
+        }]
+      });
+
+      const version = await activatedPromise;
+      expect(version.versionId).to.equal('1');
+    });
+
+    it('should wait for retroactive activation event with multiple listeners', async () => {
+      const sw = new TestServiceWorker();
+      const state = new ServiceWorkerState(sw);
+      sw.workerVersionUpdated({
+        versions: [{
+          versionId: '1',
+          registrationId: '0',
+          scriptURL: '',
+          runningStatus: 'running',
+          status: 'activated'
+        }]
+      });
+
+      const version = await state.waitForActivated('1');
+      const version1 = await state.waitForActivated('1');
+      expect(version.versionId).to.equal('1');
+      expect(version1.versionId).to.equal('1');
+    });
+
+    it('should wait for activation event with multiple listeners', async () => {
+      const sw = new TestServiceWorker();
+      const state = new ServiceWorkerState(sw, { log: true });
+      const activatedPromise = state.waitForActivated('1');
+      const activatedPromise2 = state.waitForActivated('1');
+      sw.workerVersionUpdated({
+        versions: [{
+          versionId: '1',
+          registrationId: '0',
+          scriptURL: '',
+          runningStatus: 'running',
+          status: 'activated'
+        }]
+      });
+
+      const version = await activatedPromise;
+      const version2 = await activatedPromise2;
+      expect(version.versionId).to.equal('1');
+      expect(version2.versionId).to.equal('1');
+    });
   });
 });

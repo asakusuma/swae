@@ -170,12 +170,9 @@ export class ServiceWorkerState {
     }
   }
   private listen(id: VersionStatusIdentifier, listener: VersionListener) {
-    let listeners = this.stateListeners.get(id);
-    if (!listeners) {
-      listeners = [];
-      this.stateListeners.set(id, listeners);
-    }
+    let listeners = this.stateListeners.get(id) || [];
     listeners.push(listener);
+    this.stateListeners.set(id, listeners);
   }
   private recordVersion(version: ServiceWorker.ServiceWorkerVersion) {
     if (this.log) {
@@ -245,14 +242,8 @@ export class ServiceWorkerState {
     if (existingHistory) {
       return Promise.resolve(existingHistory);
     }
-    if (this.log) {
-      console.log('Watching', arg);
-    }
     return addTimeout(new Promise((resolve) => {
       this.listen(id, (result) => {
-        if (this.log) {
-          console.log('Matched', id, arg);
-        }
         // Wait until the next tick so that any state changes take effect first
         Promise.resolve().then(() => {
           resolve(result);
