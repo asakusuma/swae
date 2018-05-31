@@ -90,7 +90,7 @@ describe('Service Worker State', () => {
 
     it('should wait for activation event with multiple listeners', async () => {
       const sw = new TestServiceWorker();
-      const state = new ServiceWorkerState(sw, { log: true });
+      const state = new ServiceWorkerState(sw);
       const activatedPromise = state.waitForActivated('1');
       const activatedPromise2 = state.waitForActivated('1');
       sw.workerVersionUpdated({

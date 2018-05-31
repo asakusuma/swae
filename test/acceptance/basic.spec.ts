@@ -147,9 +147,6 @@ describe('Service Worker', () => {
     await session.run(async (testEnv) => {
       const client = testEnv.getActiveTabClient();
 
-      // Turn on to help debug test that is only failing in travis
-      client.debug();
-
       await client.navigate();
 
       await client.evaluate(function() {
