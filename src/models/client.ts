@@ -5,7 +5,7 @@ import {
   CacheStorage,
   Network
 } from 'chrome-debugging-client/dist/protocol/tot';
-import { IDebuggingProtocolClient } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
@@ -33,8 +33,11 @@ export class ClientEnvironment {
   private debuggerClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
 
-  private constructor(debuggerClient: IDebuggingProtocolClient, rootUrl: string) {
+  public tab: ITabResponse;
+
+  private constructor(debuggerClient: IDebuggingProtocolClient, rootUrl: string, tab: ITabResponse) {
     this.rootUrl = rootUrl;
+    this.tab = tab;
     this.debuggerClient = debuggerClient;
     this.serviceWorker = new ServiceWorker(debuggerClient);
     this.page = new Page(debuggerClient);
@@ -53,8 +56,8 @@ export class ClientEnvironment {
     this.swState.debug();
   }
 
-  public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string) {
-    const instance = new ClientEnvironment(debuggerClient, rootUrl);
+  public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string, tab: ITabResponse) {
+    const instance = new ClientEnvironment(debuggerClient, rootUrl, tab);
     await Promise.all([
       instance.page.enable(),
       instance.serviceWorker.enable(),

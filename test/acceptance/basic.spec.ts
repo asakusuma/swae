@@ -50,7 +50,7 @@ describe('Service Worker', () => {
       const client1 = testEnv.getActiveTabClient();
       await client1.navigate();
 
-      const client2 = await testEnv.openAndActivateTab();
+      const client2 = await testEnv.createAndActivateTab();
 
       await client2.navigate();
 
@@ -73,7 +73,7 @@ describe('Service Worker', () => {
         '2nd tab with registered service worker should add meta tag').to.be.true;
 
       // Go back to the first tab
-      await testEnv.openTabByIndex(0);
+      await testEnv.activateTabByIndex(0);
 
       const navResult2 = await client1.navigate();
 

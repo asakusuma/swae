@@ -42,18 +42,18 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     return this.testServer;
   }
 
-  public async newTab(): Promise<ClientEnvironment> {
+  public async createTab(): Promise<ClientEnvironment> {
     const tab = await this.client.newTab();
     return this.buildClientEnv(tab);
   }
 
-  public openTabById(id: string) {
+  public activateTabById(id: string) {
     return this.activateTab(id);
   }
 
-  public async openAndActivateTab() {
-    await this.newTab();
-    await this.openLastTab();
+  public async createAndActivateTab() {
+    await this.createTab();
+    await this.activateLastTab();
     return this.getActiveTabClient();
   }
 
@@ -64,19 +64,20 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     });
   }
 
-  public async openTabByIndex(index: number) {
+  // This method is probably broken
+  public async activateTabByIndex(index: number) {
     const tabs = await this.getTabs();
     const rawIndex = tabs.length - 1 - index;
     if (rawIndex >= 0) {
-      return this.openTabById(tabs[rawIndex].id);
+      return this.activateTabById(tabs[rawIndex].id);
     }
   }
 
-  public async openLastTab() {
+  public async activateLastTab() {
     const tabs = await this.getTabs();
     if (tabs.length > 0) {
       const last = tabs[0];
-      return this.openTabById(last.id);
+      return this.activateTabById(last.id);
     }
   }
 
@@ -91,9 +92,13 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     }));
   }
 
+  public async activateTabClient(client: ClientEnvironment) {
+    await this.activateTabById(client.tab.id);
+  }
+
   private async buildClientEnv(tab: ITabResponse): Promise<ClientEnvironment> {
     const dp = await this.session.openDebuggingProtocol(tab.webSocketDebuggerUrl || '');
-    const client = await ClientEnvironment.build(dp, this.testServer.rootUrl);
+    const client = await ClientEnvironment.build(dp, this.testServer.rootUrl, tab);
     this.tabIdToClientEnv[tab.id] = client;
     return client;
   }
