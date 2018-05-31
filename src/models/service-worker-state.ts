@@ -180,9 +180,9 @@ export class ServiceWorkerState {
     const id = identifierFromVersion(version);
     this.stateHistory.set(id, version);
 
-    if (version.status === 'activated') {
+    if (version.status === 'activated' && version.runningStatus === 'running') {
       this.handleActivated(version);
-    } else if (version.status === 'installed') {
+    } else if (version.status === 'installed' && version.runningStatus === 'running') {
       this.handleInstalled(version);
     }
 
