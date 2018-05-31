@@ -1,7 +1,7 @@
 # swae [![Build Status](https://api.travis-ci.org/asakusuma/swae.svg?branch=master)](https://travis-ci.org/asakusuma/swae) [![npm version](https://badge.fury.io/js/swae.svg)](https://www.npmjs.com/package/swae)
 **S**ervice**W**orker**A**ssessment**E**ngine
 
-A service worker testing framework in the early stages of development. Effectively a big wrapper around [chrome-debugging-client](https://github.com/devtrace/chrome-debugging-client), which is node client for interacting with [Headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome). Built with [TypeScript](https://www.typescriptlang.org/).
+A service worker testing framework in the early stages of development. There are lots of bugs, and every release is potentially a breaking change. Effectively a big wrapper around [chrome-debugging-client](https://github.com/devtrace/chrome-debugging-client), which is node client for interacting with [Headless Chrome](https://developers.google.com/web/updates/2017/04/headless-chrome) via the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/). Built with [TypeScript](https://www.typescriptlang.org/).
 
 ## Example
 
