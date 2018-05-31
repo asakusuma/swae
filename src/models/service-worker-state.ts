@@ -174,7 +174,7 @@ export class ServiceWorkerState {
   }
   private recordVersion(version: ServiceWorker.ServiceWorkerVersion) {
     if (this.log) {
-      console.log('Service Worker State', version.status, version.runningStatus, version);
+      console.log('[sw]', version.status, version.runningStatus, version.versionId);
     }
     this.versions.set(Number(version.versionId), version);
     const id = identifierFromVersion(version);
