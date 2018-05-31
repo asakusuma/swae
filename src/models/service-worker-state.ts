@@ -245,10 +245,13 @@ export class ServiceWorkerState {
     if (existingHistory) {
       return Promise.resolve(existingHistory);
     }
+    if (this.log) {
+      console.log('Watching', arg);
+    }
     return addTimeout(new Promise((resolve) => {
       this.listen(id, (result) => {
         if (this.log) {
-          console.log('Matched', id);
+          console.log('Matched', id, arg);
         }
         // Wait until the next tick so that any state changes take effect first
         Promise.resolve().then(() => {
