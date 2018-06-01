@@ -51,7 +51,9 @@ export class FrameStore {
   onNetworkResponse(res: Network.ResponseReceivedParameters) {
     if (res.frameId) {
       const nav = this.frames[res.frameId];
-      if (nav) {
+      // TODO: Figure out why sometimes we recieve a bogus requestId that is a
+      // decimal number represented as a string
+      if (nav && res.requestId.indexOf('.') < 0) {
         nav.onNetworkResponse(res);
       }
     } else {
