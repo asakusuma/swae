@@ -8,7 +8,7 @@ export function wait(time: number) {
   });
 }
 
-const session = new TestSession(createServer());
+const session = new TestSession(createServer(), { browserResolution: { browserType: 'system' }});
 before(session.ready.bind(session));
 after(session.close.bind(session));
 

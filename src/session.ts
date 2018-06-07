@@ -1,6 +1,10 @@
-import { createSession, ISession } from 'chrome-debugging-client';
+import { createSession, ISession, IResolveOptions } from 'chrome-debugging-client';
 import { TestEnvironment } from './app-env';
 import { TestServerApi } from './test-server-api';
+
+export interface SessionOptions {
+  browserResolution?: IResolveOptions;
+}
 
 /**
  * A test session, including a headless chrome instance
@@ -8,9 +12,11 @@ import { TestServerApi } from './test-server-api';
  */
 export class TestSession<S extends TestServerApi = TestServerApi> {
   public testServerPromise: Promise<S>;
+  private browserResolution: IResolveOptions;
   // private securityOrigin: string = 'http://localhost'; // TODO: make this dynamic
-  constructor(testServerPromise: Promise<S>) {
+  constructor(testServerPromise: Promise<S>, options: SessionOptions = {}) {
     this.testServerPromise = testServerPromise;
+    this.browserResolution = options.browserResolution || {};
   }
   public async ready(): Promise<void> {
     return this.testServerPromise
@@ -24,10 +30,10 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   private async spawnBrowser(session: ISession) {
 
     try {
-      return await session.spawnBrowser({
+      return await session.spawnBrowser(Object.assign({
         additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
         windowSize: { width: 640, height: 320 }
-      });
+      }, this.browserResolution));
     } catch (err) {
       console.error(`Error encountered when spawning chrome: ${err.message}`);
       throw err;
