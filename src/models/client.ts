@@ -95,6 +95,24 @@ export class ClientEnvironment {
     });
   }
 
+  public async emulateOffline() {
+    await this.network.emulateNetworkConditions({
+      offline: true,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1
+    });
+  }
+
+  public async turnOffEmulateOffline() {
+    await this.network.emulateNetworkConditions({
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1
+    });
+  }
+
   public async navigate(targetUrl?: string): Promise<NavigateResult> {
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
 
