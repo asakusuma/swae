@@ -13,6 +13,6 @@
     "removeComments": false
   },
   "files": [
-    "./src/index.ts"
+    "./src/**/*.ts"
   ]
 }

@@ -1,5 +1,7 @@
 import { IAPIClient, ISession, ITabResponse } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
+import { emulateOffline, turnOffEmulateOffline, HasNetwork } from './utils';
+import { ServiceWorkerEnvironment } from './models/service-worker-client';
 import { TestServerApi } from './test-server-api';
 
 /**
@@ -15,12 +17,14 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   private activeClient: ClientEnvironment;
 
   private tabIdToClientEnv: {[tabId: string]: ClientEnvironment};
+  private targetIdToServiceWorkerEnv: {[targetId: string]: ServiceWorkerEnvironment};
 
   private constructor(client: IAPIClient, session: ISession, testServer: S) {
     this.client = client;
     this.session = session;
     this.testServer = testServer;
     this.tabIdToClientEnv = {};
+    this.targetIdToServiceWorkerEnv = {};
   }
 
   public static async build<S extends TestServerApi = TestServerApi>
@@ -64,6 +68,13 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     });
   }
 
+  private async getServiceWorkers() {
+    const tabs = await this.client.listTabs();
+    return tabs.filter(({ type }) => {
+      return type === 'service_worker';
+    });
+  }
+
   // This method is probably broken
   public async activateTabByIndex(index: number) {
     const tabs = await this.getTabs();
@@ -94,6 +105,44 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
 
   public async activateTabClient(client: ClientEnvironment) {
     await this.activateTabById(client.tab.id);
+  }
+
+  public async getServiceWorkerEnvironment(target: string | ITabResponse): Promise<ServiceWorkerEnvironment> {
+    const targetId = typeof target === 'string' ? target : target.id;
+    const sw = this.targetIdToServiceWorkerEnv[targetId];
+    if (sw) {
+      return Promise.resolve(sw);
+    }
+    const worker = typeof target !== 'string' ? target : (await this.getServiceWorkers()).find((w) => {
+      return w.id === targetId;
+    });
+    if (!worker) {
+      throw new Error(`Could not find service worker with targetId ${targetId}`);
+    }
+    const dp = await this.session.openDebuggingProtocol(worker.webSocketDebuggerUrl || '');
+    return ServiceWorkerEnvironment.build(dp);
+  }
+
+  private async getServiceWorkerEnvironments() {
+    const workers = await this.getServiceWorkers();
+    return Promise.all(workers.map((w) => this.getServiceWorkerEnvironment(w)));
+  }
+
+  private async getClientEnvironments() {
+    const workers = this.getServiceWorkerEnvironments();
+    const tabs = Object.keys(this.tabIdToClientEnv)
+      .map((key) => this.tabIdToClientEnv[key]);
+
+    const combined: HasNetwork[][] = await Promise.all([tabs, workers]);
+    return combined[0].concat(combined[1]);
+  }
+
+  public async emulateOffline() {
+    return (await this.getClientEnvironments()).map(emulateOffline);
+  }
+
+  public async turnOffEmulateOffline() {
+    return (await this.getClientEnvironments()).map(turnOffEmulateOffline);
   }
 
   private async buildClientEnv(tab: ITabResponse): Promise<ClientEnvironment> {
