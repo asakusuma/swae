@@ -3,12 +3,15 @@ import {
   ServiceWorker,
   IndexedDB,
   CacheStorage,
-  Network
+  Network,
+  Target
 } from 'chrome-debugging-client/dist/protocol/tot';
+import createTargetConnection from 'chrome-debugging-client/dist/lib/create-target-connection';
 import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
+import { emulateOffline, turnOffEmulateOffline } from '../utils';
 
 /**
  * @public
@@ -28,6 +31,7 @@ export class ClientEnvironment {
   public indexedDB: IndexedDB;
   public network: Network;
   public serviceWorker: ServiceWorker;
+  public target: Target;
   public rootUrl: string;
 
   private debuggerClient: IDebuggingProtocolClient;
@@ -44,12 +48,20 @@ export class ClientEnvironment {
     this.indexedDB = new IndexedDB(debuggerClient);
     this.cacheStorage = new CacheStorage(debuggerClient);
     this.network = new Network(debuggerClient);
-    this.swState = new ServiceWorkerState(this.serviceWorker);
+    this.target = new Target(debuggerClient);
+    this.swState = new ServiceWorkerState(this.serviceWorker, this.generateConnection.bind(this));
 
     this.frameStore = new FrameStore();
 
     this.network.responseReceived = this.frameStore.onNetworkResponse.bind(this.frameStore);
     this.page.frameNavigated = this.frameStore.onNavigationComplete.bind(this.frameStore);
+  }
+
+  private async generateConnection(targetId: string) {
+    const { sessionId } = await this.target.attachToTarget({
+      targetId
+    });
+    return createTargetConnection(this.debuggerClient, sessionId);
   }
 
   public debug() {
@@ -96,21 +108,11 @@ export class ClientEnvironment {
   }
 
   public async emulateOffline() {
-    await this.network.emulateNetworkConditions({
-      offline: true,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
+    return Promise.all([emulateOffline(this.network), this.swState.emulateOffline()]);
   }
 
   public async turnOffEmulateOffline() {
-    await this.network.emulateNetworkConditions({
-      offline: false,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
+    return Promise.all([turnOffEmulateOffline(this.network), this.swState.turnOffEmulateOffline()]);
   }
 
   public async navigate(targetUrl?: string): Promise<NavigateResult> {

@@ -1,6 +1,11 @@
 import {
-  ServiceWorker
+  ServiceWorker,
+  Target,
+  Network,
 } from 'chrome-debugging-client/dist/protocol/tot';
+
+import { IConnection } from 'chrome-debugging-client';
+import { emulateOffline, turnOffEmulateOffline } from './../utils';
 
 export interface VersionStatusIdentifier {
   status: ServiceWorker.ServiceWorkerVersionStatus;
@@ -87,6 +92,10 @@ export interface IServiceWorker {
   updateRegistration?: (params: ServiceWorker.UpdateRegistrationParameters) => Promise<void>;
 }
 
+export interface ITarget {
+  attachToTarget: (params: Target.AttachToTargetParameters) => Promise<Target.AttachToTargetReturn>;
+}
+
 type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
 
 /**
@@ -98,6 +107,22 @@ export interface IServiceWorkerStateOptions {
 }
 
 export type ServiceWorkerErrorCallback = (err: ServiceWorker.ServiceWorkerErrorMessage) => void;
+
+
+export class ServiceWorkerTarget {
+  public network: Network;
+  constructor(public targetId: string, connection: IConnection) {
+    this.network = new Network(connection);
+  }
+  emulateOffline() {
+    return emulateOffline(this.network);
+  }
+  turnOffEmulateOffline() {
+    return turnOffEmulateOffline(this.network);
+  }
+}
+
+export type ConnectionFactory = (targetId: string) => Promise<IConnection>;
 
 /**
  * Models the state of Service Workers for a particular client
@@ -118,10 +143,16 @@ export class ServiceWorkerState {
 
   private stateListeners: StateIdArrayMap<VersionListener>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
+  private targets: Map<string, ServiceWorkerTarget>;
 
   private errorCallbacks: ServiceWorkerErrorCallback[];
+  private connectionFactory: ConnectionFactory;
 
-  constructor(serviceWorker: IServiceWorker, options: IServiceWorkerStateOptions = {}) {
+  constructor(
+    serviceWorker: IServiceWorker,
+    connectionFactory: ConnectionFactory,
+    options: IServiceWorkerStateOptions = {}
+  ) {
     this.versions = new Map();
     this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
@@ -130,6 +161,8 @@ export class ServiceWorkerState {
     this.errorCallbacks = [];
 
     this.errors = [];
+
+    this.targets = new Map();
 
     // TODO: Somehow add ability to listen to network requests from the service worker
     // The service worker might be its own client
@@ -145,6 +178,13 @@ export class ServiceWorkerState {
     };
 
     this.serviceWorker = serviceWorker;
+    this.connectionFactory = connectionFactory;
+  }
+  public emulateOffline() {
+    return Promise.all(Array.from(this.targets, ([key, target]) => target.emulateOffline()));
+  }
+  public turnOffEmulateOffline() {
+    return Promise.all(Array.from(this.targets, ([key, target]) => target.turnOffEmulateOffline()));
   }
   public catchErrors(cb: ServiceWorkerErrorCallback) {
     this.errorCallbacks.push(cb);
@@ -177,7 +217,7 @@ export class ServiceWorkerState {
     listeners.push(listener);
     this.stateListeners.set(id, listeners);
   }
-  private recordVersion(version: ServiceWorker.ServiceWorkerVersion) {
+  private recordVersion(version: ServiceWorker.ServiceWorkerVersion): void {
     if (this.log) {
       console.log('[sw]', version.status, version.runningStatus, version.versionId);
     }
@@ -195,6 +235,14 @@ export class ServiceWorkerState {
     if (listeners) {
       listeners.forEach((listener) => {
         listener(version);
+      });
+    }
+
+    const targetId = version.targetId;
+    if (targetId && !this.targets.has(targetId)) {
+      // tslint:disable-next-line:no-floating-promises
+      this.connectionFactory(targetId).then((connection) => {
+        this.targets.set(targetId, new ServiceWorkerTarget(targetId, connection));
       });
     }
   }

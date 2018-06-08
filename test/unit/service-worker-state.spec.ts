@@ -14,11 +14,13 @@ class TestServiceWorker implements IServiceWorker {
   }
 }
 
+function mockConnectionFactory(): any { }
+
 describe('Service Worker State', () => {
   describe('waitForActivated', () => {
     it('should wait for activation event', async () => {
       const sw = new TestServiceWorker();
-      const state = new ServiceWorkerState(sw);
+      const state = new ServiceWorkerState(sw, mockConnectionFactory);
       const activatedPromise = state.waitForActivated();
       sw.workerVersionUpdated({
         versions: [{
@@ -36,7 +38,7 @@ describe('Service Worker State', () => {
 
     it('should wait for activation event when passed a version after the event happens', async () => {
       const sw = new TestServiceWorker();
-      const state = new ServiceWorkerState(sw);
+      const state = new ServiceWorkerState(sw, mockConnectionFactory);
       sw.workerVersionUpdated({
         versions: [{
           versionId: '1',
@@ -53,7 +55,7 @@ describe('Service Worker State', () => {
 
     it('should wait for activation event when passed a version before the event happens', async () => {
       const sw = new TestServiceWorker();
-      const state = new ServiceWorkerState(sw);
+      const state = new ServiceWorkerState(sw, mockConnectionFactory);
       const activatedPromise = state.waitForActivated('1');
       sw.workerVersionUpdated({
         versions: [{
@@ -71,7 +73,7 @@ describe('Service Worker State', () => {
 
     it('should wait for retroactive activation event with multiple listeners', async () => {
       const sw = new TestServiceWorker();
-      const state = new ServiceWorkerState(sw);
+      const state = new ServiceWorkerState(sw, mockConnectionFactory);
       sw.workerVersionUpdated({
         versions: [{
           versionId: '1',
@@ -90,7 +92,7 @@ describe('Service Worker State', () => {
 
     it('should wait for activation event with multiple listeners', async () => {
       const sw = new TestServiceWorker();
-      const state = new ServiceWorkerState(sw);
+      const state = new ServiceWorkerState(sw, mockConnectionFactory);
       const activatedPromise = state.waitForActivated('1');
       const activatedPromise2 = state.waitForActivated('1');
       sw.workerVersionUpdated({

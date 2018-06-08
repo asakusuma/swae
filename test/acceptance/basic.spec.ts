@@ -45,6 +45,26 @@ describe('Service Worker', () => {
     });
   });
 
+  it.only('should offline', async () => {
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
+      await client.navigate();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.register('/sw.js');
+      });
+
+      await client.swState.waitForActivated();
+
+      await client.emulateOffline();
+
+      const { body, networkResult } = await client.navigate();
+
+      expect(networkResult.response.fromServiceWorker).to.be.true;
+      expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
+    });
+  });
+
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
     await session.run(async (testEnv) => {
       const client1 = testEnv.getActiveTabClient();

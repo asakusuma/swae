@@ -298,9 +298,9 @@ check-error@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/check-error/-/check-error-1.0.2.tgz#574d312edd88bb5dd8912e9286dd6c0aed4aac82"
 
-chrome-debugging-client@^0.6.1:
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-0.6.1.tgz#e0b288d24eb0270d0651054d1554a1deb3a71c73"
+chrome-debugging-client@^0.6.2:
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-0.6.2.tgz#5b2401fd5a4f562bd0dfcd7c0f569d0f0082c61f"
   dependencies:
     "@types/node" "^8.9.5"
     "@types/rimraf" "^2.0.2"
