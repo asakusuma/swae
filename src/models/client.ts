@@ -117,7 +117,6 @@ export class ClientEnvironment {
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
 
     const tree = await this.page.getFrameTree();
-    console.log('tree', tree);
     const frameId = tree.frameTree.frame.id;
 
     const navPromise = this.frameStore.start(frameId);

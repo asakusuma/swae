@@ -39,6 +39,8 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
+      await client.emulateOffline();
+
       const { body, networkResult } = await client.navigate();
 
       expect(networkResult.response.fromServiceWorker).to.be.true;
