@@ -1,5 +1,6 @@
 import {
-  ServiceWorker
+  ServiceWorker,
+  Target
 } from 'chrome-debugging-client/dist/protocol/tot';
 
 export interface VersionStatusIdentifier {
@@ -87,6 +88,10 @@ export interface IServiceWorker {
   updateRegistration?: (params: ServiceWorker.UpdateRegistrationParameters) => Promise<void>;
 }
 
+export interface ITarget {
+  attachToTarget(params: Target.AttachToTargetParameters) => Target.AttachToTargetReturn;
+}
+
 type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
 
 /**
@@ -112,6 +117,7 @@ export class ServiceWorkerState {
   private lastInstalled: ServiceWorker.ServiceWorkerVersion;
 
   private serviceWorker: IServiceWorker;
+  private target: ITarget;
 
   private log: boolean;
   private errors: ServiceWorker.ServiceWorkerErrorMessage[];
@@ -121,7 +127,7 @@ export class ServiceWorkerState {
 
   private errorCallbacks: ServiceWorkerErrorCallback[];
 
-  constructor(serviceWorker: IServiceWorker, options: IServiceWorkerStateOptions = {}) {
+  constructor(serviceWorker: IServiceWorker, target: ITarget, options: IServiceWorkerStateOptions = {}) {
     this.versions = new Map();
     this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
@@ -145,6 +151,7 @@ export class ServiceWorkerState {
     };
 
     this.serviceWorker = serviceWorker;
+    this.target = target;
   }
   public catchErrors(cb: ServiceWorkerErrorCallback) {
     this.errorCallbacks.push(cb);

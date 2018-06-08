@@ -3,9 +3,10 @@ import {
   ServiceWorker,
   IndexedDB,
   CacheStorage,
-  Network
+  Network,
+  Target
 } from 'chrome-debugging-client/dist/protocol/tot';
-import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, ITabResponse, createTargetClient } from 'chrome-debugging-client';
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
@@ -30,6 +31,8 @@ export class ClientEnvironment {
   public serviceWorker: ServiceWorker;
   public rootUrl: string;
 
+  public target: Target;
+
   private debuggerClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
 
@@ -44,12 +47,46 @@ export class ClientEnvironment {
     this.indexedDB = new IndexedDB(debuggerClient);
     this.cacheStorage = new CacheStorage(debuggerClient);
     this.network = new Network(debuggerClient);
+    this.target = new Target(debuggerClient);
     this.swState = new ServiceWorkerState(this.serviceWorker);
 
     this.frameStore = new FrameStore();
 
+    this.target.attachedToTarget = (params) => {
+      console.log('attached', params);
+    };
+
+    this.target.receivedMessageFromTarget = (params) => {
+      console.log('recieved message', params.message);
+    };
+
     this.network.responseReceived = this.frameStore.onNetworkResponse.bind(this.frameStore);
     this.page.frameNavigated = this.frameStore.onNavigationComplete.bind(this.frameStore);
+  }
+
+  public async getBrowserContexts() {
+    return this.target.getBrowserContexts();
+  }
+
+  public async getTargets() {
+    return this.target.getTargets();
+  }
+
+  public async getServiceWorkers() {
+    const targets = await this.target.getTargets();
+    return targets.targetInfos.filter(({ type }) => {
+      return type === 'service_worker';
+    });
+  }
+
+  public async attatchToWorkers() {
+    const workers = await this.getServiceWorkers();
+    const promises = workers.map((sw) => {
+      return this.target.attachToTarget({
+        targetId: sw.targetId
+      });
+    });
+    return Promise.all(promises);
   }
 
   public debug() {
