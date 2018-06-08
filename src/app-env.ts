@@ -1,6 +1,7 @@
-import { IAPIClient, ISession, ITabResponse } from 'chrome-debugging-client';
+import { IAPIClient, ISession, ITabResponse, IDebuggingProtocolClient } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
+import { Target } from 'chrome-debugging-client/dist/protocol/tot';
 
 /**
  * API for interacting with the complete running test application
@@ -16,19 +17,22 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
 
   private tabIdToClientEnv: {[tabId: string]: ClientEnvironment};
 
-  private constructor(client: IAPIClient, session: ISession, testServer: S) {
+  private browserClient: IDebuggingProtocolClient;
+
+  private constructor(client: IAPIClient, browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
     this.client = client;
     this.session = session;
     this.testServer = testServer;
     this.tabIdToClientEnv = {};
+    this.browserClient = browserClient;
   }
 
   public static async build<S extends TestServerApi = TestServerApi>
-    (client: IAPIClient, session: ISession, testServer: S) {
+    (client: IAPIClient, browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
     const tabs = await client.listTabs();
     const initialTab = tabs[0];
 
-    const appEnv = new TestEnvironment(client, session, testServer);
+    const appEnv = new TestEnvironment(client, browserClient, session, testServer);
     await appEnv.buildClientEnv(initialTab);
     await appEnv.activateTab(initialTab.id);
     return appEnv;
@@ -79,6 +83,20 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
       const last = tabs[0];
       return this.activateTabById(last.id);
     }
+  }
+
+  public async autoAttach() {
+    const target = new Target(this.browserClient);
+    target.receivedMessageFromTarget = (msg) => {
+      console.log('msg', msg.message);
+    };
+    target.attachedToTarget = (attached) => {
+      console.log('attached', attached);
+    };
+    await target.setAutoAttach({
+      autoAttach: true,
+      waitForDebuggerOnStart: false
+    });
   }
 
   public async closeTab() {

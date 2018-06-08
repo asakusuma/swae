@@ -27,8 +27,9 @@ describe('Service Worker', () => {
     });
   });
 
-  it('should intercept basepage request and add meta tag', async () => {
+  it.only('should intercept basepage request and add meta tag', async () => {
     await session.run(async (testEnv) => {
+      await testEnv.autoAttach();
       const client = testEnv.getActiveTabClient();
       await client.navigate();
 

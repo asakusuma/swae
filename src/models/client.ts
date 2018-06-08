@@ -3,9 +3,11 @@ import {
   ServiceWorker,
   IndexedDB,
   CacheStorage,
-  Network
+  Network,
+  Target
 } from 'chrome-debugging-client/dist/protocol/tot';
 import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
+import createTargetConnection from 'chrome-debugging-client/dist/lib/create-target-connection';
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
@@ -152,4 +154,29 @@ function isAbsolutePath(url: string) {
     return true;
   }
   return false;
+}
+
+export async function autoAttach(debuggerClient: IDebuggingProtocolClient, host: string, port: number) {
+  const target = new Target(debuggerClient);
+  await target.setDiscoverTargets({
+    discover: true
+  });
+  await target.setRemoteLocations({
+    locations: [{
+      host,
+      port
+    }]
+  });
+  target.targetCreated = (targetz) => {
+    console.log('created', targetz);
+  };
+  target.attachedToTarget = async (attached) => {
+    console.log('attached', attached.sessionId, attached.targetInfo.type, attached.targetInfo.title);
+    const connection = createTargetConnection(debuggerClient, attached.sessionId);
+    await autoAttach(connection, host, port);
+  };
+  await target.setAutoAttach({
+    autoAttach: true,
+    waitForDebuggerOnStart: false
+  });
 }
