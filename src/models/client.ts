@@ -6,7 +6,7 @@ import {
   Network,
   Target
 } from 'chrome-debugging-client/dist/protocol/tot';
-import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient } from 'chrome-debugging-client';
 import createTargetConnection from 'chrome-debugging-client/dist/lib/create-target-connection';
 
 import { ServiceWorkerState } from './service-worker-state';
@@ -31,15 +31,13 @@ export class ClientEnvironment {
   public network: Network;
   public serviceWorker: ServiceWorker;
   public rootUrl: string;
+  public targetId: string;
 
   private debuggerClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
 
-  public tab: ITabResponse;
-
-  private constructor(debuggerClient: IDebuggingProtocolClient, rootUrl: string, tab: ITabResponse) {
+  private constructor(debuggerClient: IDebuggingProtocolClient, rootUrl: string, targetId: string) {
     this.rootUrl = rootUrl;
-    this.tab = tab;
     this.debuggerClient = debuggerClient;
     this.serviceWorker = new ServiceWorker(debuggerClient);
     this.page = new Page(debuggerClient);
@@ -58,8 +56,8 @@ export class ClientEnvironment {
     this.swState.debug();
   }
 
-  public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string, tab: ITabResponse) {
-    const instance = new ClientEnvironment(debuggerClient, rootUrl, tab);
+  public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string, targetId: string) {
+    const instance = new ClientEnvironment(debuggerClient, rootUrl, targetId);
     await Promise.all([
       instance.page.enable(),
       instance.serviceWorker.enable(),
@@ -119,6 +117,7 @@ export class ClientEnvironment {
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
 
     const tree = await this.page.getFrameTree();
+    console.log('tree', tree);
     const frameId = tree.frameTree.frame.id;
 
     const navPromise = this.frameStore.start(frameId);

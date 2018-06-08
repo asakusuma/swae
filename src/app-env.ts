@@ -1,4 +1,4 @@
-import { IAPIClient, ISession, ITabResponse, IDebuggingProtocolClient } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, IConnection, ISession } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
 import { Target } from 'chrome-debugging-client/dist/protocol/tot';
@@ -10,31 +10,46 @@ import { Target } from 'chrome-debugging-client/dist/protocol/tot';
  * @public
  */
 export class TestEnvironment<S extends TestServerApi = TestServerApi> {
-  private client: IAPIClient;
-  private session: ISession;
   private testServer: S;
   private activeClient: ClientEnvironment;
+  private targetDomain: Target;
+  private session: ISession;
 
-  private tabIdToClientEnv: {[tabId: string]: ClientEnvironment};
+  private browserContextId: string;
+
+  private targetIdToClientEnv: {[targetId: string]: ClientEnvironment};
 
   private browserClient: IDebuggingProtocolClient;
 
-  private constructor(client: IAPIClient, browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
-    this.client = client;
-    this.session = session;
+  private constructor(browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
     this.testServer = testServer;
-    this.tabIdToClientEnv = {};
+    this.targetIdToClientEnv = {};
     this.browserClient = browserClient;
+    this.targetDomain = new Target(browserClient);
+    this.session = session;
+  }
+
+  public async createTarget(): Promise<ClientEnvironment> {
+    const { targetId } = await this.targetDomain.createTarget({
+      browserContextId: this.browserContextId,
+      url: 'about:blank',
+    });
+    const connection = await this.session.attachToTarget(this.browserClient, targetId);
+    const env = await this.buildClientEnv(connection, targetId);
+    if (!this.activeClient) {
+      this.activeClient = env;
+    }
+    return env;
+  }
+
+  public async createBrowserContext() {
+    this.browserContextId = (await this.targetDomain.createBrowserContext()).browserContextId;
   }
 
   public static async build<S extends TestServerApi = TestServerApi>
-    (client: IAPIClient, browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
-    const tabs = await client.listTabs();
-    const initialTab = tabs[0];
-
-    const appEnv = new TestEnvironment(client, browserClient, session, testServer);
-    await appEnv.buildClientEnv(initialTab);
-    await appEnv.activateTab(initialTab.id);
+    (browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
+    const appEnv = new TestEnvironment(browserClient, session, testServer);
+    await appEnv.createBrowserContext();
     return appEnv;
   }
 
@@ -47,42 +62,11 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async createTab(): Promise<ClientEnvironment> {
-    const tab = await this.client.newTab();
-    return this.buildClientEnv(tab);
+    return this.createTab();
   }
 
   public activateTabById(id: string) {
     return this.activateTab(id);
-  }
-
-  public async createAndActivateTab() {
-    await this.createTab();
-    await this.activateLastTab();
-    return this.getActiveTabClient();
-  }
-
-  private async getTabs() {
-    const tabs = await this.client.listTabs();
-    return tabs.filter(({ type }) => {
-      return type === 'page';
-    });
-  }
-
-  // This method is probably broken
-  public async activateTabByIndex(index: number) {
-    const tabs = await this.getTabs();
-    const rawIndex = tabs.length - 1 - index;
-    if (rawIndex >= 0) {
-      return this.activateTabById(tabs[rawIndex].id);
-    }
-  }
-
-  public async activateLastTab() {
-    const tabs = await this.getTabs();
-    if (tabs.length > 0) {
-      const last = tabs[0];
-      return this.activateTabById(last.id);
-    }
   }
 
   public async autoAttach() {
@@ -104,26 +88,24 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async close() {
-    const tabIds = Object.keys(this.tabIdToClientEnv);
-    return Promise.all(tabIds.map((tabId) => {
-      return this.tabIdToClientEnv[tabId].close();
+    const targetIds = Object.keys(this.targetIdToClientEnv);
+    return Promise.all(targetIds.map((targetId) => {
+      return this.targetIdToClientEnv[targetId].close();
     }));
   }
 
   public async activateTabClient(client: ClientEnvironment) {
-    await this.activateTabById(client.tab.id);
+    await this.activateTabById(client.targetId);
   }
 
-  private async buildClientEnv(tab: ITabResponse): Promise<ClientEnvironment> {
-    const dp = await this.session.openDebuggingProtocol(tab.webSocketDebuggerUrl || '');
-    const client = await ClientEnvironment.build(dp, this.testServer.rootUrl, tab);
-    this.tabIdToClientEnv[tab.id] = client;
+  private async buildClientEnv(connection: IConnection, targetId: string): Promise<ClientEnvironment> {
+    const client = await ClientEnvironment.build(connection, this.testServer.rootUrl, targetId);
+    this.targetIdToClientEnv[targetId] = client;
     return client;
   }
 
-  private async activateTab(tabId: string) {
-    await this.client.activateTab(tabId);
-    this.activeClient = this.tabIdToClientEnv[tabId];
+  private async activateTab(targetId: string) {
+    await this.targetDomain.activateTarget({ targetId });
   }
 }
 
