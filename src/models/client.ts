@@ -159,12 +159,14 @@ export async function autoAttach(debuggerClient: IDebuggingProtocolClient, host:
   await target.setDiscoverTargets({
     discover: true
   });
+  /*
   await target.setRemoteLocations({
     locations: [{
       host,
       port
     }]
   });
+  */
   target.targetCreated = (targetz) => {
     console.log('created', targetz);
   };

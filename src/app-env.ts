@@ -1,7 +1,8 @@
 import { IDebuggingProtocolClient, IConnection, ISession } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
-import { Target, Network } from 'chrome-debugging-client/dist/protocol/tot';
+import { Target } from 'chrome-debugging-client/dist/protocol/tot';
+import { clientEmulateOffline } from './utils';
 
 /**
  * API for interacting with the complete running test application
@@ -70,6 +71,7 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async emulate() {
+    /*
     const network = new Network(this.browserClient);
     await network.enable({});
     await network.emulateNetworkConditions({
@@ -78,17 +80,8 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
       downloadThroughput: -1,
       uploadThroughput: -1
     });
-  }
-
-  public async autoAttach() {
-    const target = new Target(this.browserClient);
-    target.attachedToTarget = (attached) => {
-      console.log('attached', attached);
-    };
-    await target.setAutoAttach({
-      autoAttach: true,
-      waitForDebuggerOnStart: false
-    });
+    */
+    await clientEmulateOffline(this.browserClient);
   }
 
   public async closeTab() {

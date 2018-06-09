@@ -29,7 +29,7 @@ describe('Service Worker', () => {
 
   it.only('should intercept basepage request and add meta tag', async () => {
     await session.run(async (testEnv) => {
-      await testEnv.autoAttach();
+      // await testEnv.autoAttach();
       const client = await testEnv.createTarget();
       await client.navigate();
 
@@ -39,7 +39,7 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
-      await client.emulateOffline();
+      await testEnv.emulate();
 
       const { body, networkResult } = await client.navigate();
 
