@@ -107,7 +107,8 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   private async buildClientEnv(targetClient: IDebuggingProtocolClient, targetId: string): Promise<ClientEnvironment> {
-    const client = await ClientEnvironment.build(this.session, targetClient, this.testServer.rootUrl, targetId);
+    const client = await ClientEnvironment.build(
+      this.session, this.browserClient, targetClient, this.testServer.rootUrl, targetId);
     this.targetIdToClientEnv[targetId] = client;
     return client;
   }

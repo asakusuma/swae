@@ -111,6 +111,7 @@ class ServiceWorkerProtocolSession {
   public async emulateOffline(offline: boolean) {
     const { networkDomain } = await this.core;
     if (offline) {
+      console.log('sw emulate', this.targetId);
       await emulateOffline(networkDomain);
     } else {
       await turnOffEmulateOffline(networkDomain);
@@ -329,7 +330,6 @@ export class ServiceWorkerState {
 
   public emulateOffline(offline: boolean) {
     return Promise.all(Array.from(this.targets).map(([key, sw]) => {
-      console.log('emulate offline sw', sw.targetId);
       return sw.emulateOffline(offline);
     }));
   }

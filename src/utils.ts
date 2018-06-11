@@ -5,6 +5,7 @@ import {
 import { IDebuggingProtocolClient, ISession } from 'chrome-debugging-client';
 
 export async function emulateOffline(network: Network) {
+  console.log('emulating network conditions');
   await network.emulateNetworkConditions({
     offline: true,
     latency: 0,
@@ -15,6 +16,7 @@ export async function emulateOffline(network: Network) {
 }
 
 export async function turnOffEmulateOffline(network: Network) {
+  console.log('TURN OFF BAD');
   await network.emulateNetworkConditions({
     offline: false,
     latency: 0,

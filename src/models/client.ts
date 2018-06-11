@@ -34,17 +34,23 @@ export class ClientEnvironment {
   public rootUrl: string;
   public targetId: string;
 
-  private debuggerClient: IDebuggingProtocolClient;
+  private tabClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
 
-  private constructor(session: ISession, browserClient: IDebuggingProtocolClient, rootUrl: string, targetId: string) {
+  private constructor(
+    session: ISession,
+    browserClient: IDebuggingProtocolClient,
+    tabClient: IDebuggingProtocolClient,
+    rootUrl: string,
+    targetId: string
+  ) {
     this.rootUrl = rootUrl;
-    this.debuggerClient = browserClient;
-    this.serviceWorker = new ServiceWorker(browserClient);
-    this.page = new Page(browserClient);
-    this.indexedDB = new IndexedDB(browserClient);
-    this.cacheStorage = new CacheStorage(browserClient);
-    this.network = new Network(browserClient);
+    this.tabClient = tabClient;
+    this.serviceWorker = new ServiceWorker(tabClient);
+    this.page = new Page(tabClient);
+    this.indexedDB = new IndexedDB(tabClient);
+    this.cacheStorage = new CacheStorage(tabClient);
+    this.network = new Network(tabClient);
     this.swState = new ServiceWorkerState(session, browserClient, this.serviceWorker);
 
     this.frameStore = new FrameStore();
@@ -56,11 +62,12 @@ export class ClientEnvironment {
 
   public static async build(
     session: ISession,
-    debuggerClient: IDebuggingProtocolClient,
+    browserClient: IDebuggingProtocolClient,
+    tabClient: IDebuggingProtocolClient,
     rootUrl: string,
     targetId: string
   ) {
-    const instance = new ClientEnvironment(session, debuggerClient, rootUrl, targetId);
+    const instance = new ClientEnvironment(session, browserClient, tabClient, rootUrl, targetId);
     await Promise.all([
       instance.page.enable(),
       instance.serviceWorker.enable(),
@@ -96,7 +103,7 @@ export class ClientEnvironment {
 
   public evaluate<T>(code: string | (() => T)): Promise<T> {
     const expression = typeof code === 'string' ? code : `(${code.toString()}())`;
-    return this.debuggerClient.send('Runtime.evaluate', {
+    return this.tabClient.send('Runtime.evaluate', {
       expression,
       awaitPromise: true
     });
@@ -104,7 +111,6 @@ export class ClientEnvironment {
 
   public async emulateOffline(offline: boolean) {
     if (offline) {
-      console.log('emulating offline for window client');
       await emulateOffline(this.network);
     } else {
       await turnOffEmulateOffline(this.network);
