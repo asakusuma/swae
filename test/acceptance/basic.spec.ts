@@ -27,6 +27,24 @@ describe('Service Worker', () => {
     });
   });
 
+  it('should intercept basepage request and add meta tag', async () => {
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
+      await client.navigate();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.register('/sw.js');
+      });
+
+      await client.swState.waitForActivated();
+
+      const { body, networkResult } = await client.navigate();
+
+      expect(networkResult.response.fromServiceWorker).to.be.true;
+      expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
+    });
+  });
+
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
     await session.run(async (testEnv) => {
       const client1 = await testEnv.createTarget();
@@ -176,21 +194,12 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
-      console.log('try to emulate');
       await testEnv.emulateOffline();
-      console.log('done emuilating');
 
-      let failure;
+      const { body, networkResult } = await client.navigate();
 
-      try {
-        console.log('try');
-        await client.navigate();
-        console.log('done');
-      } catch (e) {
-        expect(e.message.match(/ECONN/), 'Should throw connection error').to.be.ok;
-      } finally {
-        expect(failure, 'Error should be thrown').to.be.ok;
-      }
+    expect(networkResult.response.fromServiceWorker).to.be.true;
+    expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
     });
   });
 });

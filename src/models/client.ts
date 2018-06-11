@@ -6,12 +6,12 @@ import {
   Network,
   Target
 } from 'chrome-debugging-client/dist/protocol/tot';
-import { IDebuggingProtocolClient } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, ISession } from 'chrome-debugging-client';
 import createTargetConnection from 'chrome-debugging-client/dist/lib/create-target-connection';
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
-import { emulateOffline, turnOffClientEmulateOffline, turnOffEmulateOffline } from '../utils';
+import { emulateOffline, turnOffEmulateOffline } from '../utils';
 
 /**
  * @public
@@ -37,15 +37,15 @@ export class ClientEnvironment {
   private debuggerClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
 
-  private constructor(debuggerClient: IDebuggingProtocolClient, rootUrl: string, targetId: string) {
+  private constructor(session: ISession, browserClient: IDebuggingProtocolClient, rootUrl: string, targetId: string) {
     this.rootUrl = rootUrl;
-    this.debuggerClient = debuggerClient;
-    this.serviceWorker = new ServiceWorker(debuggerClient);
-    this.page = new Page(debuggerClient);
-    this.indexedDB = new IndexedDB(debuggerClient);
-    this.cacheStorage = new CacheStorage(debuggerClient);
-    this.network = new Network(debuggerClient);
-    this.swState = new ServiceWorkerState(this.serviceWorker);
+    this.debuggerClient = browserClient;
+    this.serviceWorker = new ServiceWorker(browserClient);
+    this.page = new Page(browserClient);
+    this.indexedDB = new IndexedDB(browserClient);
+    this.cacheStorage = new CacheStorage(browserClient);
+    this.network = new Network(browserClient);
+    this.swState = new ServiceWorkerState(session, browserClient, this.serviceWorker);
 
     this.frameStore = new FrameStore();
 
@@ -54,12 +54,13 @@ export class ClientEnvironment {
     this.targetId = targetId;
   }
 
-  public debug() {
-    this.swState.debug();
-  }
-
-  public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string, targetId: string) {
-    const instance = new ClientEnvironment(debuggerClient, rootUrl, targetId);
+  public static async build(
+    session: ISession,
+    debuggerClient: IDebuggingProtocolClient,
+    rootUrl: string,
+    targetId: string
+  ) {
+    const instance = new ClientEnvironment(session, debuggerClient, rootUrl, targetId);
     await Promise.all([
       instance.page.enable(),
       instance.serviceWorker.enable(),
@@ -67,6 +68,10 @@ export class ClientEnvironment {
       instance.network.enable({})
     ]);
     return instance;
+  }
+
+  public debug() {
+    this.swState.debug();
   }
 
   public async close() {
@@ -99,10 +104,12 @@ export class ClientEnvironment {
 
   public async emulateOffline(offline: boolean) {
     if (offline) {
+      console.log('emulating offline for window client');
       await emulateOffline(this.network);
     } else {
       await turnOffEmulateOffline(this.network);
     }
+    await this.swState.emulateOffline(offline);
   }
 
   public async navigate(targetUrl?: string): Promise<NavigateResult> {

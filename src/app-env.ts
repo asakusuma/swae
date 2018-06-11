@@ -1,8 +1,7 @@
-import { IDebuggingProtocolClient, IConnection, ISession } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, ISession } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
 import { Target } from 'chrome-debugging-client/dist/protocol/tot';
-import { clientEmulateOffline, turnOffClientEmulateOffline } from './utils';
 
 /**
  * API for interacting with the complete running test application
@@ -37,8 +36,8 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
       browserContextId: this.browserContextId,
       url: 'about:blank',
     });
-    const connection = await this.session.attachToTarget(this.browserClient, targetId);
-    const env = await this.buildClientEnv(connection, targetId);
+    const debuggingClient = await this.session.attachToTarget(this.browserClient, targetId);
+    const env = await this.buildClientEnv(debuggingClient, targetId);
     this.clientEnvIndex.push(env);
     if (!this.activeClient) {
       this.activeClient = env;
@@ -107,8 +106,8 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     await this.activateTabById(client.targetId);
   }
 
-  private async buildClientEnv(connection: IConnection, targetId: string): Promise<ClientEnvironment> {
-    const client = await ClientEnvironment.build(connection, this.testServer.rootUrl, targetId);
+  private async buildClientEnv(targetClient: IDebuggingProtocolClient, targetId: string): Promise<ClientEnvironment> {
+    const client = await ClientEnvironment.build(this.session, targetClient, this.testServer.rootUrl, targetId);
     this.targetIdToClientEnv[targetId] = client;
     return client;
   }

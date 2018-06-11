@@ -2,7 +2,6 @@ import { createSession, ISession, IResolveOptions } from 'chrome-debugging-clien
 import { TestEnvironment } from './app-env';
 // import { autoAttach } from './models/client';
 import { TestServerApi } from './test-server-api';
-import { autoAttach } from './models/client';
 export interface SessionOptions {
   browserResolution?: IResolveOptions;
 }
@@ -52,7 +51,7 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
 
 
 
-      await autoAttach(browserClient, 'localhost', browser.remoteDebuggingPort);
+      // await autoAttach(browserClient, 'localhost', browser.remoteDebuggingPort);
 
       const appEnv = await TestEnvironment.build(browserClient, session, server);
       await test(appEnv);
