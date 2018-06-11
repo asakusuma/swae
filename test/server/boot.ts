@@ -16,6 +16,13 @@ export default function boot(serverApi: IServerApi): Express {
 
   const swFile = readFileSync('./test/client/static/sw.js', 'utf8');
 
+  app.use(function (req, res, next) {
+    res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.header('Expires', '-1');
+    res.header('Pragma', 'no-cache');
+    next();
+  });
+
   app.get('/sw.js', (req, res) => {
     res.contentType('text/javascript');
     res.setHeader('cache-control', ['no-cache', 'no-store', 'must-revalidate', 'max-age=0']);

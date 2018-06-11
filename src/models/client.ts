@@ -132,6 +132,8 @@ export class ClientEnvironment {
     await this.page.navigate({ url });
 
     const { networkResult, frame } = await navPromise;
+    console.log(networkResult);
+    console.log(frame);
 
     const body = await this.network.getResponseBody({
       requestId: networkResult.requestId

@@ -111,8 +111,8 @@ class ServiceWorkerProtocolSession {
   public async emulateOffline(offline: boolean) {
     const { networkDomain } = await this.core;
     if (offline) {
-      console.log('sw emulate', this.targetId);
       await emulateOffline(networkDomain);
+      await networkDomain.clearBrowserCache();
     } else {
       await turnOffEmulateOffline(networkDomain);
     }
