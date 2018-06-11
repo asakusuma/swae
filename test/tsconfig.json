@@ -5,7 +5,7 @@
     "lib": ["es5", "esnext", "es6", "scripthost", "dom"],
     "esModuleInterop": true,
     "moduleResolution": "node",
-    "sourceMap": false,
+    "sourceMap": true,
     "declaration": true,
     "noUnusedLocals": true,
     "noImplicitThis": true,
@@ -13,11 +13,6 @@
     "strictNullChecks": true,
     "outDir": "dist"
   },
-  "files": [
-    "./server/standalone.ts"
-  ],
-  "include": [
-    "./acceptance/*.ts",
-    "./unit/*.ts"
-  ]
+  "files": ["./server/standalone.ts"],
+  "include": ["./acceptance/*.ts", "./unit/*.ts"]
 }
