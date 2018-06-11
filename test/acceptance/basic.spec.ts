@@ -194,6 +194,8 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
+      await client.clearBrowserCache();
+
       await testEnv.emulateOffline();
 
       const { body, networkResult } = await client.navigate();

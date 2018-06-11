@@ -118,6 +118,10 @@ export class ClientEnvironment {
     await this.swState.emulateOffline(offline);
   }
 
+  public async clearBrowserCache() {
+    await this.network.clearBrowserCache();
+  }
+
   public async navigate(targetUrl?: string): Promise<NavigateResult> {
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
 
