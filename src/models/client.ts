@@ -3,12 +3,15 @@ import {
   ServiceWorker,
   IndexedDB,
   CacheStorage,
-  Network
+  Network,
+  Target
 } from 'chrome-debugging-client/dist/protocol/tot';
-import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, ISession } from 'chrome-debugging-client';
+import createTargetConnection from 'chrome-debugging-client/dist/lib/create-target-connection';
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
+import { emulateOffline, turnOffEmulateOffline } from '../utils';
 
 /**
  * @public
@@ -29,35 +32,42 @@ export class ClientEnvironment {
   public network: Network;
   public serviceWorker: ServiceWorker;
   public rootUrl: string;
+  public targetId: string;
 
-  private debuggerClient: IDebuggingProtocolClient;
+  private tabClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
 
-  public tab: ITabResponse;
-
-  private constructor(debuggerClient: IDebuggingProtocolClient, rootUrl: string, tab: ITabResponse) {
+  private constructor(
+    session: ISession,
+    browserClient: IDebuggingProtocolClient,
+    tabClient: IDebuggingProtocolClient,
+    rootUrl: string,
+    targetId: string
+  ) {
     this.rootUrl = rootUrl;
-    this.tab = tab;
-    this.debuggerClient = debuggerClient;
-    this.serviceWorker = new ServiceWorker(debuggerClient);
-    this.page = new Page(debuggerClient);
-    this.indexedDB = new IndexedDB(debuggerClient);
-    this.cacheStorage = new CacheStorage(debuggerClient);
-    this.network = new Network(debuggerClient);
-    this.swState = new ServiceWorkerState(this.serviceWorker);
+    this.tabClient = tabClient;
+    this.serviceWorker = new ServiceWorker(tabClient);
+    this.page = new Page(tabClient);
+    this.indexedDB = new IndexedDB(tabClient);
+    this.cacheStorage = new CacheStorage(tabClient);
+    this.network = new Network(tabClient);
+    this.swState = new ServiceWorkerState(session, browserClient, this.serviceWorker);
 
     this.frameStore = new FrameStore();
 
     this.network.responseReceived = this.frameStore.onNetworkResponse.bind(this.frameStore);
     this.page.frameNavigated = this.frameStore.onNavigationComplete.bind(this.frameStore);
+    this.targetId = targetId;
   }
 
-  public debug() {
-    this.swState.debug();
-  }
-
-  public static async build(debuggerClient: IDebuggingProtocolClient, rootUrl: string, tab: ITabResponse) {
-    const instance = new ClientEnvironment(debuggerClient, rootUrl, tab);
+  public static async build(
+    session: ISession,
+    browserClient: IDebuggingProtocolClient,
+    tabClient: IDebuggingProtocolClient,
+    rootUrl: string,
+    targetId: string
+  ) {
+    const instance = new ClientEnvironment(session, browserClient, tabClient, rootUrl, targetId);
     await Promise.all([
       instance.page.enable(),
       instance.serviceWorker.enable(),
@@ -65,6 +75,10 @@ export class ClientEnvironment {
       instance.network.enable({})
     ]);
     return instance;
+  }
+
+  public debug() {
+    this.swState.debug();
   }
 
   public async close() {
@@ -89,28 +103,23 @@ export class ClientEnvironment {
 
   public evaluate<T>(code: string | (() => T)): Promise<T> {
     const expression = typeof code === 'string' ? code : `(${code.toString()}())`;
-    return this.debuggerClient.send('Runtime.evaluate', {
+    return this.tabClient.send('Runtime.evaluate', {
       expression,
       awaitPromise: true
     });
   }
 
-  public async emulateOffline() {
-    await this.network.emulateNetworkConditions({
-      offline: true,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
+  public async emulateOffline(offline: boolean) {
+    if (offline) {
+      await emulateOffline(this.network);
+    } else {
+      await turnOffEmulateOffline(this.network);
+    }
+    await this.swState.emulateOffline(offline);
   }
 
-  public async turnOffEmulateOffline() {
-    await this.network.emulateNetworkConditions({
-      offline: false,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
+  public async clearBrowserCache() {
+    await this.network.clearBrowserCache();
   }
 
   public async navigate(targetUrl?: string): Promise<NavigateResult> {
@@ -152,4 +161,21 @@ function isAbsolutePath(url: string) {
     return true;
   }
   return false;
+}
+
+export async function autoAttach(debuggerClient: IDebuggingProtocolClient, host: string, port: number) {
+  const target = new Target(debuggerClient);
+  await target.setDiscoverTargets({
+    discover: true
+  });
+  target.targetCreated = (targetz) => {
+  };
+  target.attachedToTarget = async (attached) => {
+    const connection = createTargetConnection(debuggerClient, attached.sessionId);
+    await autoAttach(connection, host, port);
+  };
+  await target.setAutoAttach({
+    autoAttach: true,
+    waitForDebuggerOnStart: false
+  });
 }

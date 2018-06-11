@@ -1,6 +1,7 @@
-import { IAPIClient, ISession, ITabResponse } from 'chrome-debugging-client';
+import { IDebuggingProtocolClient, ISession } from 'chrome-debugging-client';
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
+import { Target } from 'chrome-debugging-client/dist/protocol/tot';
 
 /**
  * API for interacting with the complete running test application
@@ -9,28 +10,56 @@ import { TestServerApi } from './test-server-api';
  * @public
  */
 export class TestEnvironment<S extends TestServerApi = TestServerApi> {
-  private client: IAPIClient;
-  private session: ISession;
   private testServer: S;
   private activeClient: ClientEnvironment;
+  private targetDomain: Target;
+  private session: ISession;
 
-  private tabIdToClientEnv: {[tabId: string]: ClientEnvironment};
+  private browserContextId: string;
 
-  private constructor(client: IAPIClient, session: ISession, testServer: S) {
-    this.client = client;
-    this.session = session;
+  private targetIdToClientEnv: {[targetId: string]: ClientEnvironment};
+  private clientEnvIndex: ClientEnvironment[];
+
+  private browserClient: IDebuggingProtocolClient;
+
+  private constructor(browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
     this.testServer = testServer;
-    this.tabIdToClientEnv = {};
+    this.targetIdToClientEnv = {};
+    this.clientEnvIndex = [];
+    this.browserClient = browserClient;
+    this.targetDomain = new Target(browserClient);
+    this.session = session;
+  }
+
+  public async createTarget(): Promise<ClientEnvironment> {
+    const { targetId } = await this.targetDomain.createTarget({
+      browserContextId: this.browserContextId,
+      url: 'about:blank',
+    });
+    const debuggingClient = await this.session.attachToTarget(this.browserClient, targetId);
+    const env = await this.buildClientEnv(debuggingClient, targetId);
+    this.clientEnvIndex.push(env);
+    if (!this.activeClient) {
+      this.activeClient = env;
+    }
+    return env;
+  }
+
+  public async createBrowserContext() {
+    this.browserContextId = (await this.targetDomain.createBrowserContext()).browserContextId;
+  }
+
+  public async activateTabByIndex(index: number) {
+    if (index < 0 || index >= this.clientEnvIndex.length) {
+      throw new Error('Invalid tab index');
+    }
+    await this.activateTabClient(this.clientEnvIndex[index]);
   }
 
   public static async build<S extends TestServerApi = TestServerApi>
-    (client: IAPIClient, session: ISession, testServer: S) {
-    const tabs = await client.listTabs();
-    const initialTab = tabs[0];
-
-    const appEnv = new TestEnvironment(client, session, testServer);
-    await appEnv.buildClientEnv(initialTab);
-    await appEnv.activateTab(initialTab.id);
+    (browserClient: IDebuggingProtocolClient, session: ISession, testServer: S) {
+    const appEnv = new TestEnvironment(browserClient, session, testServer);
+    await appEnv.createBrowserContext();
     return appEnv;
   }
 
@@ -43,42 +72,23 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async createTab(): Promise<ClientEnvironment> {
-    const tab = await this.client.newTab();
-    return this.buildClientEnv(tab);
+    return this.createTab();
   }
 
   public activateTabById(id: string) {
     return this.activateTab(id);
   }
 
+  public async emulateOffline(offline: boolean = true) {
+    await Promise.all(this.clientEnvIndex.map((client) => {
+      return client.emulateOffline(offline);
+    }));
+  }
+
   public async createAndActivateTab() {
-    await this.createTab();
-    await this.activateLastTab();
-    return this.getActiveTabClient();
-  }
-
-  private async getTabs() {
-    const tabs = await this.client.listTabs();
-    return tabs.filter(({ type }) => {
-      return type === 'page';
-    });
-  }
-
-  // This method is probably broken
-  public async activateTabByIndex(index: number) {
-    const tabs = await this.getTabs();
-    const rawIndex = tabs.length - 1 - index;
-    if (rawIndex >= 0) {
-      return this.activateTabById(tabs[rawIndex].id);
-    }
-  }
-
-  public async activateLastTab() {
-    const tabs = await this.getTabs();
-    if (tabs.length > 0) {
-      const last = tabs[0];
-      return this.activateTabById(last.id);
-    }
+    const tab = await this.createTarget();
+    await this.activateTabClient(tab);
+    return tab;
   }
 
   public async closeTab() {
@@ -86,26 +96,28 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async close() {
-    const tabIds = Object.keys(this.tabIdToClientEnv);
-    return Promise.all(tabIds.map((tabId) => {
-      return this.tabIdToClientEnv[tabId].close();
+    const targetIds = Object.keys(this.targetIdToClientEnv);
+    return Promise.all(targetIds.map((targetId) => {
+      return this.targetIdToClientEnv[targetId].close();
     }));
   }
 
   public async activateTabClient(client: ClientEnvironment) {
-    await this.activateTabById(client.tab.id);
+    await this.activateTabById(client.targetId);
   }
 
-  private async buildClientEnv(tab: ITabResponse): Promise<ClientEnvironment> {
-    const dp = await this.session.openDebuggingProtocol(tab.webSocketDebuggerUrl || '');
-    const client = await ClientEnvironment.build(dp, this.testServer.rootUrl, tab);
-    this.tabIdToClientEnv[tab.id] = client;
+  private async buildClientEnv(targetClient: IDebuggingProtocolClient, targetId: string): Promise<ClientEnvironment> {
+    const client = await ClientEnvironment.build(
+      this.session, this.browserClient, targetClient, this.testServer.rootUrl, targetId);
+    this.targetIdToClientEnv[targetId] = client;
     return client;
   }
 
-  private async activateTab(tabId: string) {
-    await this.client.activateTab(tabId);
-    this.activeClient = this.tabIdToClientEnv[tabId];
+  private async activateTab(targetId: string) {
+    const client = this.targetIdToClientEnv[targetId];
+    this.activeClient = client;
+    // TODO: Migrate to sessionID
+    await this.targetDomain.activateTarget({ targetId });
   }
 }
 
