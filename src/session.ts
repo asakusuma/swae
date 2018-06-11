@@ -1,7 +1,8 @@
 import { createSession, ISession, IResolveOptions } from 'chrome-debugging-client';
 import { TestEnvironment } from './app-env';
+// import { autoAttach } from './models/client';
 import { TestServerApi } from './test-server-api';
-
+import { autoAttach } from './models/client';
 export interface SessionOptions {
   browserResolution?: IResolveOptions;
 }
@@ -43,10 +44,20 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   private async runDebuggingSession(test: (appEnv: TestEnvironment<S>) => Promise<void>, server: S) {
     return createSession(async (session) => {
       const browser = await this.spawnBrowser(session);
-      const apiClient = session.createAPIClient('localhost', browser.remoteDebuggingPort);
 
-      const appEnv = await TestEnvironment.build(apiClient, session, server);
+
+      const browserClient = await session.openDebuggingProtocol(
+        browser.webSocketDebuggerUrl!,
+      );
+
+
+
+      await autoAttach(browserClient, 'localhost', browser.remoteDebuggingPort);
+
+      const appEnv = await TestEnvironment.build(browserClient, session, server);
       await test(appEnv);
+
+      // await browserClient.send('Browser.close');
       await appEnv.close();
     });
   }

@@ -15,7 +15,7 @@ after(session.close.bind(session));
 describe('Service Worker', () => {
   it('should have a version', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -27,27 +27,9 @@ describe('Service Worker', () => {
     });
   });
 
-  it('should intercept basepage request and add meta tag', async () => {
-    await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
-      await client.navigate();
-
-      await client.evaluate(function() {
-        return navigator.serviceWorker.register('/sw.js');
-      });
-
-      await client.swState.waitForActivated();
-
-      const { body, networkResult } = await client.navigate();
-
-      expect(networkResult.response.fromServiceWorker).to.be.true;
-      expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
-    });
-  });
-
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
     await session.run(async (testEnv) => {
-      const client1 = testEnv.getActiveTabClient();
+      const client1 = await testEnv.createTarget();
       await client1.navigate();
 
       const client2 = await testEnv.createAndActivateTab();
@@ -85,7 +67,7 @@ describe('Service Worker', () => {
   it('should throw on service worker error by default', async () => {
     const shouldReject = async () => {
       await session.run(async (testEnv) => {
-        const client = testEnv.getActiveTabClient();
+        const client = await testEnv.createTarget();
         await client.navigate();
 
         await client.evaluate(function() {
@@ -116,7 +98,7 @@ describe('Service Worker', () => {
 
   it('should not throw on service worker error if error is caught', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
 
       // Catch errors and don't re-throw
       client.swState.catchErrors(() => {});
@@ -145,7 +127,7 @@ describe('Service Worker', () => {
 
   it('active version should only change after skipWaiting', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
 
       await client.navigate();
 
@@ -180,6 +162,26 @@ describe('Service Worker', () => {
 
       const swState3 = await client.swState.getActive();
       expect(swState3.versionId).to.equal('1', 'Should be at version 1 after skipWaiting');
+    });
+  });
+
+  it.only('should propertly emulate offline conditions', async () => {
+    await session.run(async (testEnv) => {
+      const client = await testEnv.createTarget();
+      await client.navigate();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.register('/sw.js');
+      });
+
+      await client.swState.waitForActivated();
+
+      await testEnv.emulate();
+
+      const { body, networkResult } = await client.navigate();
+
+      expect(networkResult.response.fromServiceWorker).to.be.true;
+      expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
     });
   });
 });
