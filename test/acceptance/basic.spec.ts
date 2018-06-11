@@ -176,12 +176,21 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
-      await testEnv.emulate();
+      console.log('try to emulate');
+      await testEnv.emulateOffline();
+      console.log('done emuilating');
 
-      const { body, networkResult } = await client.navigate();
+      let failure;
 
-      expect(networkResult.response.fromServiceWorker).to.be.true;
-      expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
+      try {
+        console.log('try');
+        await client.navigate();
+        console.log('done');
+      } catch (e) {
+        expect(e.message.match(/ECONN/), 'Should throw connection error').to.be.ok;
+      } finally {
+        expect(failure, 'Error should be thrown').to.be.ok;
+      }
     });
   });
 });

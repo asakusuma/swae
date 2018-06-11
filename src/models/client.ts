@@ -11,6 +11,7 @@ import createTargetConnection from 'chrome-debugging-client/dist/lib/create-targ
 
 import { ServiceWorkerState } from './service-worker-state';
 import { FrameStore, NavigateResult } from './frame';
+import { emulateOffline, turnOffClientEmulateOffline, turnOffEmulateOffline } from '../utils';
 
 /**
  * @public
@@ -96,22 +97,12 @@ export class ClientEnvironment {
     });
   }
 
-  public async emulateOffline() {
-    await this.network.emulateNetworkConditions({
-      offline: true,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
-  }
-
-  public async turnOffEmulateOffline() {
-    await this.network.emulateNetworkConditions({
-      offline: false,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
+  public async emulateOffline(offline: boolean) {
+    if (offline) {
+      await emulateOffline(this.network);
+    } else {
+      await turnOffEmulateOffline(this.network);
+    }
   }
 
   public async navigate(targetUrl?: string): Promise<NavigateResult> {

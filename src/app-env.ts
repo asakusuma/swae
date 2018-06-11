@@ -2,7 +2,7 @@ import { IDebuggingProtocolClient, IConnection, ISession } from 'chrome-debuggin
 import { ClientEnvironment } from './models/client';
 import { TestServerApi } from './test-server-api';
 import { Target } from 'chrome-debugging-client/dist/protocol/tot';
-import { clientEmulateOffline } from './utils';
+import { clientEmulateOffline, turnOffClientEmulateOffline } from './utils';
 
 /**
  * API for interacting with the complete running test application
@@ -80,18 +80,10 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     return this.activateTab(id);
   }
 
-  public async emulate() {
-    /*
-    const network = new Network(this.browserClient);
-    await network.enable({});
-    await network.emulateNetworkConditions({
-      offline: true,
-      latency: 0,
-      downloadThroughput: -1,
-      uploadThroughput: -1
-    });
-    */
-    await clientEmulateOffline(this.session, this.browserClient);
+  public async emulateOffline(offline: boolean = true) {
+    await Promise.all(this.clientEnvIndex.map((client) => {
+      return client.emulateOffline(offline);
+    }));
   }
 
   public async createAndActivateTab() {

@@ -8,8 +8,9 @@ export async function emulateOffline(network: Network) {
   await network.emulateNetworkConditions({
     offline: true,
     latency: 0,
-    downloadThroughput: -1,
-    uploadThroughput: -1
+    downloadThroughput: 0,
+    uploadThroughput: 0,
+    connectionType: 'none'
   });
 }
 
@@ -23,6 +24,15 @@ export async function turnOffEmulateOffline(network: Network) {
 }
 
 export async function clientEmulateOffline(session: ISession, client: IDebuggingProtocolClient): Promise<any> {
+  console.log('emulate 1');
+  return forEachTarget(session, client, (c) => {
+    console.log('start emulate');
+    return emulateOffline(new Network(c));
+  });
+  console.log('emulate 2');
+}
+
+export async function turnOffClientEmulateOffline(session: ISession, client: IDebuggingProtocolClient): Promise<any> {
   return forEachTarget(session, client, (c) => {
     return emulateOffline(new Network(c));
   });
@@ -31,7 +41,7 @@ export async function clientEmulateOffline(session: ISession, client: IDebugging
 export type ClientCallback = (c: IDebuggingProtocolClient) => Promise<void>;
 
 export async function forEachTarget(
-  session: ISession,
+  s: ISession,
   client: IDebuggingProtocolClient,
   cb: ClientCallback
 ): Promise<any> {
@@ -40,23 +50,12 @@ export async function forEachTarget(
   if (!targets.targetInfos) {
     return Promise.resolve();
   }
-  const clients = await targets.targetInfos.map((target) => getClientForTarget(session, client, t, target));
-  return Promise.all(clients.map(async (connection) => {
-    const targetClient = await connection;
+  console.log('got targetInfos');
+  const clients = await Promise.all(targets.targetInfos.map(({ targetId }) => s.attachToTarget(client, targetId)));
+  console.log('got clients');
+  return Promise.all(clients.map(async (targetClient) => {
+    console.log('got targetclient');
     await cb(targetClient);
-    return clientEmulateOffline(session, targetClient);
+    return clientEmulateOffline(s, targetClient);
   }));
-}
-
-async function getClientForTarget(
-  session: ISession,
-  client: IDebuggingProtocolClient,
-  t: Target, target: Target.TargetInfo
-) {
-
-  // Use createTargetSessionClient instead
-  const { sessionId } = await t.attachToTarget({
-    targetId: target.targetId
-  });
-  return session.createTargetSessionClient(client, sessionId);
 }
