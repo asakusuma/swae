@@ -122,6 +122,18 @@ export class ClientEnvironment {
     await this.network.clearBrowserCache();
   }
 
+  public async disableCache() {
+    await this.network.setCacheDisabled({
+      cacheDisabled: true
+    });
+  }
+
+  public async reload() {
+    await this.page.reload({
+      ignoreCache: true
+    });
+  }
+
   public async navigate(targetUrl?: string): Promise<NavigateResult> {
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
 
@@ -132,8 +144,6 @@ export class ClientEnvironment {
     await this.page.navigate({ url });
 
     const { networkResult, frame } = await navPromise;
-    console.log(networkResult);
-    console.log(frame);
 
     const body = await this.network.getResponseBody({
       requestId: networkResult.requestId

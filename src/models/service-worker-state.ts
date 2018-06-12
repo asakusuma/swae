@@ -112,6 +112,9 @@ class ServiceWorkerProtocolSession {
     const { networkDomain } = await this.core;
     if (offline) {
       await emulateOffline(networkDomain);
+      await networkDomain.setCacheDisabled({
+        cacheDisabled: true
+      });
       await networkDomain.clearBrowserCache();
     } else {
       await turnOffEmulateOffline(networkDomain);

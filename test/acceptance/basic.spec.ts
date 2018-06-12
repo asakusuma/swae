@@ -186,6 +186,7 @@ describe('Service Worker', () => {
   it.only('should propertly emulate offline conditions', async () => {
     await session.run(async (testEnv) => {
       const client = await testEnv.createTarget();
+      await client.disableCache();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -197,6 +198,8 @@ describe('Service Worker', () => {
       await client.clearBrowserCache();
 
       await testEnv.emulateOffline();
+
+      await client.reload();
 
       const { body, networkResult } = await client.navigate();
 
