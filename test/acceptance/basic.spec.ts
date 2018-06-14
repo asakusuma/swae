@@ -182,4 +182,30 @@ describe('Service Worker', () => {
       expect(swState3.versionId).to.equal('1', 'Should be at version 1 after skipWaiting');
     });
   });
+
+  it.only('test out cache', async () => {
+    await session.run(async (testEnv) => {
+      const client = testEnv.getActiveTabClient();
+
+      await client.navigate();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.register('/sw.js');
+      });
+
+      await client.swState.waitForActivated();
+
+      await client.evaluate(function() {
+        return navigator.serviceWorker.getRegistration().then((sw) => {
+          if (sw && sw.active) {
+            sw.active.postMessage({
+              request: 'cacheTest'
+            });
+          }
+        });
+      });
+
+      await wait(2000);
+    }, ['--user-data-dir=/Volumes/testdisk/']);
+  });
 });
