@@ -2,9 +2,12 @@ import { createSession, ISession, IResolveOptions } from 'chrome-debugging-clien
 import { TestEnvironment } from './app-env';
 import { TestServerApi } from './test-server-api';
 
+export interface BrowserOptions extends IResolveOptions {
+  userDataRoot?: string;
+}
+
 export interface SessionOptions {
-  browserResolution?: IResolveOptions;
-  additionalBrowserAargs?: string[];
+  browserOptions?: BrowserOptions;
 }
 
 /**
@@ -13,13 +16,11 @@ export interface SessionOptions {
  */
 export class TestSession<S extends TestServerApi = TestServerApi> {
   public testServerPromise: Promise<S>;
-  private browserResolution: IResolveOptions;
-  private additionalBrowserAargs: string[];
+  private browserOptions: BrowserOptions;
   // private securityOrigin: string = 'http://localhost'; // TODO: make this dynamic
   constructor(testServerPromise: Promise<S>, options: SessionOptions = {}) {
     this.testServerPromise = testServerPromise;
-    this.browserResolution = options.browserResolution || {};
-    this.additionalBrowserAargs = options.additionalBrowserAargs || [];
+    this.browserOptions = options.browserOptions || {};
   }
   public async ready(): Promise<void> {
     return this.testServerPromise
@@ -30,24 +31,25 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
     return server.close();
   }
 
-  private async spawnBrowser(session: ISession, additionalArgs: string[] = []) {
+  private async spawnBrowser(session: ISession, options: BrowserOptions = {}) {
     try {
-      const additionalArguments = ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio']
-        .concat(additionalArgs);
-        console.log(additionalArguments);
       return await session.spawnBrowser(Object.assign({
-        additionalArguments,
+        additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
         windowSize: { width: 640, height: 320 }
-      }, this.browserResolution));
+      }, options, this.browserOptions));
     } catch (err) {
       console.error(`Error encountered when spawning chrome: ${err.message}`);
       throw err;
     }
   }
 
-  private async runDebuggingSession(test: (appEnv: TestEnvironment<S>) => Promise<void>, server: S, flags: string[]) {
+  private async runDebuggingSession(
+    test: (appEnv: TestEnvironment<S>) => Promise<void>,
+    server: S,
+    options: BrowserOptions
+  ) {
     return createSession(async (session) => {
-      const browser = await this.spawnBrowser(session, flags);
+      const browser = await this.spawnBrowser(session, options);
       const apiClient = session.createAPIClient('localhost', browser.remoteDebuggingPort);
 
       const appEnv = await TestEnvironment.build(apiClient, session, server);
@@ -56,10 +58,9 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
     });
   }
 
-  public async run(test: (appEnv: TestEnvironment<S>) => Promise<void>, additionalBrowserAargs: string[] = []) {
-    const args = this.additionalBrowserAargs.concat(additionalBrowserAargs);
+  public async run(test: (appEnv: TestEnvironment<S>) => Promise<void>, options: BrowserOptions = {}) {
     const server = await this.testServerPromise;
-    await this.runDebuggingSession(test, server, args);
+    await this.runDebuggingSession(test, server, options);
     await server.reset();
   }
 }

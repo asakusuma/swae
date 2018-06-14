@@ -8,7 +8,7 @@ export function wait(time: number) {
   });
 }
 
-const session = new TestSession(createServer(), { browserResolution: { browserType: 'canary' }});
+const session = new TestSession(createServer(), { browserOptions: { browserType: 'canary' }});
 before(session.ready.bind(session));
 after(session.close.bind(session));
 
@@ -206,6 +206,8 @@ describe('Service Worker', () => {
       });
 
       await wait(2000);
-    }, ['--user-data-dir=/Volumes/testdisk/']);
+    }, {
+      userDataRoot: '/Volumes/testdisk/'
+    });
   });
 });
