@@ -3,7 +3,8 @@ import {
   ServiceWorker,
   IndexedDB,
   CacheStorage,
-  Network
+  Network,
+  Runtime
 } from 'chrome-debugging-client/dist/protocol/tot';
 import { IDebuggingProtocolClient, ITabResponse } from 'chrome-debugging-client';
 
@@ -15,6 +16,34 @@ import { FrameStore, NavigateResult } from './frame';
  */
 export interface EvaluateFunction {
   <T>(toEvaluate: () => T): Promise<T>;
+}
+
+interface TypedRemoteObject<T> extends Runtime.RemoteObject {
+  value: T;
+}
+
+interface TypedAwaitPromiseReturn<T> extends Runtime.AwaitPromiseReturn {
+  result: TypedRemoteObject<T>;
+}
+
+function exceptionDetailsToError({ exception, text, stackTrace }: Runtime.ExceptionDetails) {
+  const msg = (exception ? exception.description : text) || text;
+  const err = new Error(`Runtime Evaluation Failed: ${msg}`);
+  if (stackTrace) {
+    err.stack = stackTrace.callFrames.join('\n');
+  }
+  return err;
+}
+
+function isAbsolutePath(url: string) {
+  if (url.length < 8 || url.substr(0, 1) === '/') {
+    return false;
+  } else if (url.substr(0, 7) === 'http://') {
+    return true;
+  } else if (url.substr(0, 8) === 'https://') {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -87,12 +116,62 @@ export class ClientEnvironment {
     });
   }
 
-  public evaluate<T>(code: string | (() => T)): Promise<T> {
+  public async evaluate<T>(code: string | (() => T)): Promise<TypedRemoteObject<T>> {
     const expression = typeof code === 'string' ? code : `(${code.toString()}())`;
-    return this.debuggerClient.send('Runtime.evaluate', {
+    const {
+      result,
+      exceptionDetails
+    } = await this.debuggerClient.send<TypedAwaitPromiseReturn<T>>('Runtime.evaluate', {
       expression,
-      awaitPromise: true
+      awaitPromise: true,
+      silent: false
     });
+    if (exceptionDetails) {
+      throw exceptionDetailsToError(exceptionDetails);
+    }
+    return result;
+  }
+
+  public getStorageEstimate() {
+    return this.evaluate(function getStorageEstimate() {
+      return (navigator as any).storage.estimate().then((stats: { quota: number, usage: number}) => {
+        return JSON.stringify(stats);
+      });
+    });
+  }
+
+  public async ensureMaximumStorageAvailable(bytesAvailable: number) {
+    const functionString = function() {
+      function getAvailable() {
+        return (navigator as any).storage.estimate().then((stats: { quota: number, usage: number}) => {
+          return stats.quota - stats.usage;
+        });
+      }
+      function generateString(size: number) {
+        let str = '';
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < size; i++) {
+          str += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return str;
+      }
+      return caches.open('test-cache').then(async (cache) => {
+        let available = -1;
+        let iterations = 0;
+        do {
+          await cache.put(generateString(20), new Response(new Blob([generateString(999)])));
+          available = await getAvailable();
+          iterations++;
+        } while (available > bytesAvailable);
+        return {
+          iterations,
+          available
+        };
+      });
+    }.toString();
+    // Hacky way of injecting bytesAvailable parameter
+    const paramsInjected = functionString.replace(/bytesAvailable/, String(bytesAvailable));
+    return this.evaluate(`(${paramsInjected})();`);
   }
 
   public async emulateOffline() {
@@ -141,15 +220,4 @@ export class ClientEnvironment {
     }
     return this.rootUrl + targetUrl;
   }
-}
-
-function isAbsolutePath(url: string) {
-  if (url.length < 8 || url.substr(0, 1) === '/') {
-    return false;
-  } else if (url.substr(0, 7) === 'http://') {
-    return true;
-  } else if (url.substr(0, 8) === 'https://') {
-    return true;
-  }
-  return false;
 }
