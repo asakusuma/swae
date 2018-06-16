@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { TestSession } from './../../src';
+import { TestSession, mountRamDisk } from './../../src';
 import { createServer } from './../server/';
-import { mountRamDisk } from '../../src/disk';
 
 export function wait(time: number) {
   return new Promise((r) => {

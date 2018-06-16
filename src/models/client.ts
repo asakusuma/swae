@@ -18,11 +18,11 @@ export interface EvaluateFunction {
   <T>(toEvaluate: () => T): Promise<T>;
 }
 
-interface TypedRemoteObject<T> extends Runtime.RemoteObject {
+export interface TypedRemoteObject<T> extends Runtime.RemoteObject {
   value: T;
 }
 
-interface TypedAwaitPromiseReturn<T> extends Runtime.AwaitPromiseReturn {
+export interface TypedAwaitPromiseReturn<T> extends Runtime.AwaitPromiseReturn {
   result: TypedRemoteObject<T>;
 }
 

@@ -4,7 +4,7 @@ import mkdirp from 'mkdirp';
 
 const HFS_MINIMUM = 1100;
 
-interface DiskHandle {
+export interface DiskHandle {
   mountPath: string;
   filePath: string;
   eject: () => Promise<void>;
