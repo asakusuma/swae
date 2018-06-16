@@ -3,8 +3,8 @@
 
 
 "@microsoft/api-documenter@^1.2.1":
-  version "1.2.4"
-  resolved "https://registry.yarnpkg.com/@microsoft/api-documenter/-/api-documenter-1.2.4.tgz#77cf2ae67dceb5c1ae49bfc0c14cfe5baad8f039"
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/@microsoft/api-documenter/-/api-documenter-1.2.5.tgz#097b47f3b6d2106f84f7636e39c3bd234f42e897"
   dependencies:
     "@microsoft/api-extractor" "5.7.3"
     "@microsoft/node-core-library" "1.4.0"
@@ -119,6 +119,12 @@
 "@types/mkdirp@^0.3.29":
   version "0.3.29"
   resolved "https://registry.yarnpkg.com/@types/mkdirp/-/mkdirp-0.3.29.tgz#7f2ad7ec55f914482fc9b1ec4bb1ae6028d46066"
+
+"@types/mkdirp@^0.5.2":
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/@types/mkdirp/-/mkdirp-0.5.2.tgz#503aacfe5cc2703d5484326b1b27efa67a339c1f"
+  dependencies:
+    "@types/node" "*"
 
 "@types/mocha@^5.2.0":
   version "5.2.2"
@@ -303,9 +309,9 @@ check-error@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/check-error/-/check-error-1.0.2.tgz#574d312edd88bb5dd8912e9286dd6c0aed4aac82"
 
-chrome-debugging-client@^0.6.1:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-0.6.2.tgz#5b2401fd5a4f562bd0dfcd7c0f569d0f0082c61f"
+chrome-debugging-client@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-0.6.3.tgz#81565312e1152a47e3d88c5ccce85c7933dba157"
   dependencies:
     "@types/node" "^8.9.5"
     "@types/rimraf" "^2.0.2"
@@ -708,7 +714,7 @@ minimist@0.0.8:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-0.0.8.tgz#857fcabfc3397d2625b8228262e86aa7a011b05d"
 
-mkdirp@0.5.1:
+mkdirp@0.5.1, mkdirp@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
   dependencies:
@@ -777,6 +783,10 @@ once@^1.3.0:
   resolved "https://registry.yarnpkg.com/once/-/once-1.4.0.tgz#583b1aa775961d4b113ac17d9c50baef9dd76bd1"
   dependencies:
     wrappy "1"
+
+os@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/os/-/os-0.1.1.tgz#208845e89e193ad4d971474b93947736a56d13f3"
 
 p-finally@^1.0.0:
   version "1.0.0"

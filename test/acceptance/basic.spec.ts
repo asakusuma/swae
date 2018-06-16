@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { TestSession } from './../../src';
 import { createServer } from './../server/';
+import { mountRamDisk } from '../../src/disk';
 
 export function wait(time: number) {
   return new Promise((r) => {
@@ -8,7 +9,7 @@ export function wait(time: number) {
   });
 }
 
-const session = new TestSession(createServer(), { browserResolution: { browserType: 'canary' }});
+const session = new TestSession(createServer(), { browserOptions: { browserType: 'canary' }});
 before(session.ready.bind(session));
 after(session.close.bind(session));
 
@@ -181,5 +182,51 @@ describe('Service Worker', () => {
       const swState3 = await client.swState.getActive();
       expect(swState3.versionId).to.equal('1', 'Should be at version 1 after skipWaiting');
     });
+  });
+
+  // TODO: Figure out why this test fails in Travis. Perhaps sudo does not work?
+  xit('should throw QuotaExceededError when attempting to write to full storage', async () => {
+    const diskHandle = await mountRamDisk(512);
+    try {
+      try {
+        await session.run(async (testEnv) => {
+          const client = testEnv.getActiveTabClient();
+
+          await client.navigate();
+
+          await client.evaluate(function() {
+            return navigator.serviceWorker.register('/sw.js');
+          });
+          const currentStorage = await client.getStorageEstimate();
+          console.log('ensure storage availability', currentStorage);
+          const available = await client.ensureMaximumStorageAvailable(1000);
+          console.log('final available', available);
+          await client.swState.waitForActivated();
+
+          await client.evaluate(function() {
+            return navigator.serviceWorker.getRegistration().then((sw) => {
+              if (sw && sw.active) {
+                sw.active.postMessage({
+                  request: 'cacheTest'
+                });
+              }
+            });
+          });
+
+          // TODO: wait on actual cache operation
+          await wait(1000);
+        }, {
+          userDataRoot: diskHandle.mountPath
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          expect(e.message).to.match(/Quota/, 'Should throw Quota error');
+        } else {
+          throw new Error('Expected caught error');
+        }
+      }
+    } finally {
+      await diskHandle.eject();
+    }
   });
 });
