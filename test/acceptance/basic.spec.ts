@@ -183,9 +183,8 @@ describe('Service Worker', () => {
     });
   });
 
-  // TODO: Figure out why this test fails in Travis. Perhaps sudo does not work?
-  xit('should throw QuotaExceededError when attempting to write to full storage', async () => {
-    const diskHandle = await mountRamDisk(512);
+  it('should throw QuotaExceededError when attempting to write to full storage', async () => {
+    const diskHandle = await mountRamDisk(512000);
     try {
       try {
         await session.run(async (testEnv) => {
@@ -196,10 +195,7 @@ describe('Service Worker', () => {
           await client.evaluate(function() {
             return navigator.serviceWorker.register('/sw.js');
           });
-          const currentStorage = await client.getStorageEstimate();
-          console.log('ensure storage availability', currentStorage);
-          const available = await client.ensureMaximumStorageAvailable(1000);
-          console.log('final available', available);
+          // await client.ensureMaximumStorageAvailable(1000);
           await client.swState.waitForActivated();
 
           await client.evaluate(function() {

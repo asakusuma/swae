@@ -60,7 +60,7 @@ export async function mountRamDisk(size: number, name: string = generateDriveNam
         }
       });
     });
-    process = exec(`sudo mount -t tmpfs -o size=${size}m tmpfs ${mountPath}`);
+    process = exec(`sudo mount -t tmpfs -o size=${size} tmpfs ${mountPath}`);
   } else {
     throw new Error('mountRamDisk can only be run on Mac or Linux');
   }
