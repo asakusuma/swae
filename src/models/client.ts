@@ -163,10 +163,10 @@ export class ClientEnvironment {
           available = await getAvailable();
           iterations++;
         } while (available > bytesAvailable);
-        return {
+        return JSON.stringify({
           iterations,
           available
-        };
+        });
       });
     }.toString();
     // Hacky way of injecting bytesAvailable parameter

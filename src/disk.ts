@@ -1,5 +1,5 @@
 import { platform } from 'os';
-import { ChildProcess, exec } from 'child_process';
+import execa, { ExecaReturns } from 'execa';
 import mkdirp from 'mkdirp';
 
 const HFS_MINIMUM = 1100;
@@ -7,47 +7,27 @@ const HFS_MINIMUM = 1100;
 export interface DiskHandle {
   mountPath: string;
   filePath: string;
-  eject: () => Promise<void>;
+  eject: () => Promise<ExecaReturns>;
 }
 
 function generateDriveName() {
   return `swae_test_drive_${String(parseInt(String(Math.random() * 1000000)))}`;
 }
 
-function eject(path: string): Promise<void> {
+function eject(path: string) {
   const command = platform() === 'darwin' ? `diskutil eject ${path} -force` : `sudo umount ${path}`;
-  const process = exec(command);
-  return new Promise((resolve: () => void, reject) => {
-    let outStr = '';
-    let errStr = '';
-    process.on('exit', function (code, signal) {
-      if (code === 0) {
-        resolve();
-      } else {
-        console.log(outStr);
-        console.error(errStr);
-        reject(new Error(`Failed to eject disk: [${code}]${signal}`));
-      }
-    });
-    process.on('error', (e) => {
-      reject(e);
-    });
-    process.stdout.on('data', (d) => {
-      outStr += d;
-    });
-    process.stderr.on('data', (d) => {
-      errStr += d;
-    });
+  return execa.shell(command).catch((e) => {
+    throw new Error(`Failed to eject disk: ${e.message}`);
   });
 }
 
 export async function mountRamDisk(size: number, name: string = generateDriveName()): Promise<DiskHandle> {
-  let process: ChildProcess;
   let mountPath: string;
+  let command: string;
   const p = platform();
   if (p === 'darwin') {
     const darwinSize = size > HFS_MINIMUM ? size * 2 : HFS_MINIMUM;
-    process = exec(`diskutil erasedisk HFS+ "${name}" $(hdid -nomount ram://${darwinSize})`);
+    command = `diskutil erasedisk HFS+ "${name}" $(hdid -nomount ram://${darwinSize})`;
     mountPath = `/Volumes/${name}/`;
   } else if (p === 'linux') {
     mountPath = `/tmp/${name}`;
@@ -60,52 +40,35 @@ export async function mountRamDisk(size: number, name: string = generateDriveNam
         }
       });
     });
-    process = exec(`sudo mount -t tmpfs -o size=${size}m tmpfs ${mountPath}`);
+    command = `sudo mount -t tmpfs -o size=${size} tmpfs ${mountPath}`;
   } else {
     throw new Error('mountRamDisk can only be run on Mac or Linux');
   }
 
-  return new Promise((resolve: (volumePath: DiskHandle) => void, reject) => {
-    let outStr = '';
-    let errStr = '';
-    let filePath: string;
-    if (p === 'linux') {
+  return execa.shell(command).then((result) => {
+    let filePath = '';
+    if (p === 'darwin') {
+      // TODO: Better way of resolving the file path of the disk
+      const searchPath = result.stdout.match(/\/[a-z\/0-9A-Z\.]+/);
+      if (searchPath) {
+        filePath = searchPath[0];
+      }
+    } else {
+      // linux
       filePath = mountPath;
     }
-    process.on('exit', function (code, signal) {
-      if (code === 0) {
-        if (filePath) {
-          resolve({
-            mountPath,
-            filePath,
-            eject() {
-              return eject(filePath);
-            }
-          });
-        } else {
-          reject(new Error('Unable to resolve disk path'));
+    if (filePath) {
+      return {
+        mountPath,
+        filePath,
+        eject() {
+          return eject(filePath);
         }
-      } else {
-        console.log(outStr);
-        console.error(errStr);
-        reject(new Error(`Error mounting disk: ${signal} | ${errStr}`));
-      }
-    });
-    process.on('error', (e) => {
-      reject(e);
-    });
-    process.stdout.on('data', (data: string) => {
-      outStr += data;
-      if (p === 'darwin') {
-        // TODO: Better way of resolving the file path of the disk
-        const searchPath = data.match(/\/[a-z\/0-9A-Z\.]+/);
-        if (searchPath) {
-          filePath = searchPath[0];
-        }
-      }
-    });
-    process.stderr.on('data', (data) => {
-      errStr += data;
-    });
+      };
+    } else {
+      throw new Error('Unable to resolve disk path');
+    }
+  }).catch((err: execa.ExecaError) => {
+    throw new Error(`Error mounting disk: ${err.message}`);
   });
 }
