@@ -4,6 +4,7 @@ import { TestServerApi } from './test-server-api';
 
 export interface BrowserOptions extends IResolveOptions {
   userDataRoot?: string;
+  headless?: boolean;
 }
 
 export interface SessionOptions {
@@ -32,9 +33,13 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   }
 
   private async spawnBrowser(session: ISession, options: BrowserOptions = {}) {
+    const additionalArguments = ['--disable-gpu', '--hide-scrollbars', '--mute-audio'];
+    if (options.headless !== false) {
+      additionalArguments.push('--headless');
+    }
     try {
       return await session.spawnBrowser(Object.assign({
-        additionalArguments: ['--headless', '--disable-gpu', '--hide-scrollbars', '--mute-audio'],
+        additionalArguments,
         windowSize: { width: 640, height: 320 }
       }, options, this.browserOptions));
     } catch (err) {

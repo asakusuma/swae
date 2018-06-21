@@ -39,14 +39,18 @@ export class FrameNavigation {
  */
 export class FrameStore {
   private frames: { [frameId: string]: FrameNavigation };
+  private loadResolver: () => void;
 
   constructor() {
     this.frames = {};
   }
-  start(frameId: string) {
+  start(frameId: string, waitForLoad: boolean = false): Promise<PageNavigateResult> {
     const nav = new FrameNavigation();
     this.frames[frameId] = nav;
-    return nav.getPromise();
+    const navPromise = nav.getPromise();
+    return waitForLoad ?
+      Promise.all([navPromise, new Promise((r) => { this.loadResolver = r; })]).then(([n]) => n) :
+      navPromise;
   }
   onNetworkResponse(res: Network.ResponseReceivedParameters) {
     if (res.frameId) {
@@ -64,6 +68,11 @@ export class FrameStore {
     const nav = this.frames[result.frame.id];
     if (nav) {
       nav.onNavigationComplete(result);
+    }
+  }
+  onLoadEvent() {
+    if (this.loadResolver) {
+      this.loadResolver();
     }
   }
 }

@@ -28,7 +28,7 @@ export interface TypedAwaitPromiseReturn<T> extends Runtime.AwaitPromiseReturn {
 
 function exceptionDetailsToError({ exception, text, stackTrace }: Runtime.ExceptionDetails) {
   const msg = (exception ? exception.description : text) || text;
-  const err = new Error(`Runtime Evaluation Failed: ${msg}`);
+  const err = new Error(`Client Evaluation Failed: ${msg}`);
   if (stackTrace) {
     err.stack = stackTrace.callFrames.join('\n');
   }
@@ -79,6 +79,7 @@ export class ClientEnvironment {
 
     this.network.responseReceived = this.frameStore.onNetworkResponse.bind(this.frameStore);
     this.page.frameNavigated = this.frameStore.onNavigationComplete.bind(this.frameStore);
+    this.page.loadEventFired = this.frameStore.onLoadEvent.bind(this.frameStore);
   }
 
   public debug() {
@@ -192,13 +193,15 @@ export class ClientEnvironment {
     });
   }
 
-  public async navigate(targetUrl?: string): Promise<NavigateResult> {
+  public async navigate(arg?: string | NavigateOptions): Promise<NavigateResult> {
+    const targetUrl = arg ? typeof arg === 'string' ? arg : arg.targetUrl : null;
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
+    const waitForLoad = typeof arg === 'object' && arg.waitForLoad;
 
     const tree = await this.page.getFrameTree();
     const frameId = tree.frameTree.frame.id;
 
-    const navPromise = this.frameStore.start(frameId);
+    const navPromise = this.frameStore.start(frameId, waitForLoad);
     await this.page.navigate({ url });
 
     const { networkResult, frame } = await navPromise;
@@ -220,4 +223,9 @@ export class ClientEnvironment {
     }
     return this.rootUrl + targetUrl;
   }
+}
+
+interface NavigateOptions {
+  targetUrl?: string;
+  waitForLoad?: boolean;
 }
