@@ -15,7 +15,7 @@ after(session.close.bind(session));
 describe('Service Worker', () => {
   it('should have a version', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -29,7 +29,7 @@ describe('Service Worker', () => {
 
   it('should intercept basepage request and add meta tag', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -47,7 +47,7 @@ describe('Service Worker', () => {
 
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
     await session.run(async (testEnv) => {
-      const client1 = testEnv.getActiveTabClient();
+      const client1 = await testEnv.createTarget();
       await client1.navigate();
 
       const client2 = await testEnv.createAndActivateTab();
@@ -85,7 +85,7 @@ describe('Service Worker', () => {
   it('should throw on service worker error by default', async () => {
     const shouldReject = async () => {
       await session.run(async (testEnv) => {
-        const client = testEnv.getActiveTabClient();
+        const client = await testEnv.createTarget();
         await client.navigate();
 
         await client.evaluate(function() {
@@ -116,7 +116,7 @@ describe('Service Worker', () => {
 
   it('should not throw on service worker error if error is caught', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
 
       // Catch errors and don't re-throw
       client.swState.catchErrors(() => {});
@@ -145,7 +145,7 @@ describe('Service Worker', () => {
 
   it('active version should only change after skipWaiting', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTarget();
 
       await client.navigate();
 
@@ -188,7 +188,7 @@ describe('Service Worker', () => {
     try {
       try {
         await session.run(async (testEnv) => {
-          const client = testEnv.getActiveTabClient();
+          const client = await testEnv.createTarget();
 
           await client.navigate();
 

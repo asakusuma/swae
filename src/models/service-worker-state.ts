@@ -1,6 +1,7 @@
 import {
-  ServiceWorker
+  ServiceWorker, Network
 } from 'chrome-debugging-client/dist/protocol/tot';
+import { ISession, IDebuggingProtocolClient } from 'chrome-debugging-client';
 
 export interface VersionStatusIdentifier {
   status: ServiceWorker.ServiceWorkerVersionStatus;
@@ -89,6 +90,38 @@ export interface IServiceWorker {
 
 type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
 
+interface ServiceWorkerCore {
+  client: IDebuggingProtocolClient;
+  networkDomain: Network;
+}
+
+class ServiceWorkerProtocolSession {
+  private core: Promise<ServiceWorkerCore>;
+  constructor(public targetId: string, clientP: Promise<IDebuggingProtocolClient>) {
+    this.core = clientP.then(async (client) => {
+      const networkDomain = new Network(client);
+      await networkDomain.enable({});
+      return {
+        client,
+        networkDomain
+      };
+    });
+  }
+  public async emulateOffline(offline: boolean) {
+    await this.core;
+    throw new Error('Offline emulation not working. See https://bugs.chromium.org/p/chromium/issues/detail?id=852127');
+    /*
+    const { networkDomain } = await this.core;
+    if (offline) {
+      console.log('sw emulate', this.targetId);
+      await emulateOffline(networkDomain);
+    } else {
+      await turnOffEmulateOffline(networkDomain);
+    }
+    */
+  }
+}
+
 /**
  * ServiceWorkerState config options
  * @internal
@@ -119,13 +152,26 @@ export class ServiceWorkerState {
   private stateListeners: StateIdArrayMap<VersionListener>;
   private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
 
+  private targets: Map<string, ServiceWorkerProtocolSession>;
+  private session: ISession;
+  private browserClient: IDebuggingProtocolClient;
+
   private errorCallbacks: ServiceWorkerErrorCallback[];
 
-  constructor(serviceWorker: IServiceWorker, options: IServiceWorkerStateOptions = {}) {
+  constructor(
+    session: ISession,
+    browserClient: IDebuggingProtocolClient,
+    serviceWorker: IServiceWorker,
+    options: IServiceWorkerStateOptions = {}
+  ) {
     this.versions = new Map();
     this.stateListeners = new StateIdArrayMap();
     this.stateHistory = new StateIdMap();
     this.log = !!options.log;
+
+    this.targets = new Map();
+    this.session = session;
+    this.browserClient = browserClient;
 
     this.errorCallbacks = [];
 
@@ -184,6 +230,11 @@ export class ServiceWorkerState {
     this.versions.set(Number(version.versionId), version);
     const id = identifierFromVersion(version);
     this.stateHistory.set(id, version);
+
+    if (version.targetId && !this.targets.has(version.targetId)) {
+      const attach = this.session.attachToTarget(this.browserClient, version.targetId);
+      this.targets.set(version.targetId, new ServiceWorkerProtocolSession(version.targetId, attach));
+    }
 
     if (version.status === 'activated' && version.runningStatus === 'running') {
       this.handleActivated(version);
@@ -278,5 +329,19 @@ export class ServiceWorkerState {
     return this.serviceWorker.skipWaiting({
       scopeURL: '/'
     });
+  }
+
+  public emulateOffline(offline: boolean) {
+    throw new Error('Offline emulation not working. See https://bugs.chromium.org/p/chromium/issues/detail?id=852127');
+    /*
+    return Promise.all(Array.from(this.targets).map(([key, sw]) => {
+      return sw.emulateOffline(offline);
+    }));
+    */
+  }
+
+  public close() {
+    // TODO: Once we move to using new BrowserContext per test, instead of an entire new ISession,
+    // we need to manually close all the ServiceWorkerProtocolSessions
   }
 }
