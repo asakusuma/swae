@@ -55,10 +55,17 @@ export class TestSession<S extends TestServerApi = TestServerApi> {
   ) {
     return createSession(async (session) => {
       const browser = await this.spawnBrowser(session, options);
-      const apiClient = session.createAPIClient('localhost', browser.remoteDebuggingPort);
 
-      const appEnv = await TestEnvironment.build(apiClient, session, server);
+      const browserClient = await session.openDebuggingProtocol(
+        browser.webSocketDebuggerUrl!,
+      );
+
+      // TODO: This might be useful once offline throttling works:
+      // await autoAttach(browserClient, 'localhost', browser.remoteDebuggingPort);
+
+      const appEnv = await TestEnvironment.build(browserClient, session, server);
       await test(appEnv);
+
       await appEnv.close();
     });
   }
