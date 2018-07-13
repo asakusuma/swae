@@ -343,5 +343,10 @@ export class ServiceWorkerState {
   public close() {
     // TODO: Once we move to using new BrowserContext per test, instead of an entire new ISession,
     // we need to manually close all the ServiceWorkerProtocolSessions
+    this.versions.clear();
+    this.stateListeners.clear();
+    this.stateHistory.clear();
+    this.targets.clear();
+    this.errorCallbacks = [];
   }
 }

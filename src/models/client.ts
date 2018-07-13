@@ -121,6 +121,8 @@ export class ClientEnvironment {
       this.network.disable()
     ]);
     this.swState.ensureNoErrors();
+    // close() MUST be called after ensureNoErrors. Close cleans up everything, including the error list.
+    this.swState.close();
   }
 
   public waitForServiceWorkerRegistration() {
