@@ -98,14 +98,19 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     return tab;
   }
 
-  public async closeTab() {
-    // TODO: Call ensureNoErrors() on the tab
+  public async closeTab(targetId: string) {
+    if (!(targetId in this.targetIdToClientEnv)) {
+      throw new Error(`Can't close tab with targetId:{$targetId}. ` +
+                      'This targetId is not associated with this TestEnvironment');
+    }
+    await this.targetIdToClientEnv[targetId].close();
+    delete this.targetIdToClientEnv[targetId];
   }
 
   public async close() {
     const targetIds = Object.keys(this.targetIdToClientEnv);
     return Promise.all(targetIds.map((targetId) => {
-      return this.targetIdToClientEnv[targetId].close();
+      return this.closeTab(targetId);
     }));
   }
 

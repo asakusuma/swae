@@ -1,12 +1,9 @@
 import { expect } from 'chai';
 import { TestSession, mountRamDisk } from './../../src';
 import { createServer } from './../server/';
-
-export function wait(time: number) {
-  return new Promise((r) => {
-    setTimeout(r, time);
-  });
-}
+import {
+  wait
+} from './utils';
 
 const session = new TestSession(createServer(), { browserOptions: { browserType: 'canary' }});
 before(session.ready.bind(session));
@@ -38,22 +35,21 @@ describe('Service Worker', () => {
 
       await client.swState.waitForActivated();
 
-      const { body, networkResult } = await client.navigate();
+      const { page } = await client.load();
 
-      expect(networkResult.response.fromServiceWorker).to.be.true;
-      expect(body.body.indexOf('from-service-worker') > 0).to.be.true;
+      expect(page.responseMeta.fromServiceWorker).to.be.true;
+      expect(page.body.indexOf('from-service-worker') > 0).to.be.true;
     });
   });
 
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
     await session.run(async (testEnv) => {
       const client1 = await testEnv.createTarget();
-      await client1.navigate();
+      await client1.load();
 
       const client2 = await testEnv.createAndActivateTab();
 
-      await client2.navigate();
-
+      await client2.load();
       await client2.evaluate(function() {
         return navigator.serviceWorker.register('/sw.js');
       });
@@ -63,22 +59,21 @@ describe('Service Worker', () => {
       const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
       expect(controlledClients).to.equal(2);
 
-      const navResult = await client2.navigate();
+      const { page } = await client2.load();
 
       expect(
-        navResult.networkResult.response.fromServiceWorker,
+        page.responseMeta.fromServiceWorker,
         '2nd tab with registered service worker should intercept requests').to.be.true;
       expect(
-        navResult.body.body.indexOf('from-service-worker') > 0,
+        page.body.indexOf('from-service-worker') > 0,
         '2nd tab with registered service worker should add meta tag').to.be.true;
 
       // Go back to the first tab
       await testEnv.activateTabByIndex(0);
 
-      const navResult2 = await client1.navigate();
-
-      expect(navResult2.networkResult.response.fromServiceWorker).to.be.true;
-      expect(navResult2.body.body.indexOf('from-service-worker') > 0).to.be.true;
+      const { page: page2 } = await client1.load();
+      expect(page2.responseMeta.fromServiceWorker).to.be.true;
+      expect(page2.body.indexOf('from-service-worker') > 0).to.be.true;
     });
   });
 
