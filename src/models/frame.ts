@@ -1,14 +1,26 @@
-import { Network, Page } from 'chrome-debugging-client/dist/protocol/tot';
+import {
+  Network,
+  Page
+} from 'chrome-debugging-client/dist/protocol/tot';
 
 /**
  * Represents a frame transition from one page to another
  * @public
  */
 export class FrameNavigation {
-  private response: Network.ResponseReceivedParameters;
-  private resolve: (res: PageNavigateResult) => void;
-  private promise: Promise<PageNavigateResult>;
-  constructor() {
+  private resolve: (res: Network.ResponseReceivedParameters[]) => void;
+  private promise: Promise<Network.ResponseReceivedParameters[]>;
+  private outstandingRequests: Set<string>;
+  private responses: Network.ResponseReceivedParameters[];
+  private waitForLoad: boolean;
+  private onLoadEventFired: boolean;
+
+  constructor(waitForLoad: boolean) {
+    this.outstandingRequests = new Set();
+    this.responses = [];
+    this.waitForLoad = waitForLoad;
+    this.onLoadEventFired = false;
+
     this.promise = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Response timeout'));
@@ -19,17 +31,36 @@ export class FrameNavigation {
       };
     });
   }
+
+  onRequestWillBeSent(req: Network.RequestWillBeSentParameters) {
+    this.outstandingRequests.add(req.requestId);
+  }
+
+  resolveIfComplete() {
+    if (this.onLoadEventFired && this.outstandingRequests.size === 0) {
+      this.resolve(this.responses);
+    }
+  }
+
   onNetworkResponse(res: Network.ResponseReceivedParameters) {
-    this.response = res;
+    this.responses.push(res);
+    this.outstandingRequests.delete(res.requestId);
+    this.resolveIfComplete();
   }
-  onNavigationComplete({ frame }: Page.FrameNavigatedParameters) {
-    this.resolve({
-      frame,
-      networkResult: this.response
-    });
+
+  onNavigationComplete() {
+    if (!this.waitForLoad) {
+      this.resolve(this.responses);
+    }
   }
-  getPromise(): Promise<PageNavigateResult> {
+
+  getPromise(): Promise<Network.ResponseReceivedParameters[]> {
     return this.promise;
+  }
+
+  onLoadEvent() {
+    this.onLoadEventFired = true;
+    this.resolveIfComplete();
   }
 }
 
@@ -39,57 +70,46 @@ export class FrameNavigation {
  */
 export class FrameStore {
   private frames: { [frameId: string]: FrameNavigation };
-  private loadResolver: () => void;
 
   constructor() {
     this.frames = {};
   }
-  start(frameId: string, waitForLoad: boolean = false): Promise<PageNavigateResult> {
-    const nav = new FrameNavigation();
+  start(frameId: string, waitForLoad: boolean): Promise<Network.ResponseReceivedParameters[]> {
+    const nav = new FrameNavigation(waitForLoad);
     this.frames[frameId] = nav;
     const navPromise = nav.getPromise();
-    return waitForLoad ?
-      Promise.all([navPromise, new Promise((r) => { this.loadResolver = r; })]).then(([n]) => n) :
-      navPromise;
+    return navPromise;
   }
   onNetworkResponse(res: Network.ResponseReceivedParameters) {
     if (res.frameId) {
       const nav = this.frames[res.frameId];
-      // TODO: Figure out why sometimes we recieve a bogus requestId that is a
-      // decimal number represented as a string
-      if (nav && res.requestId.indexOf('.') < 0) {
+      if (nav) {
         nav.onNetworkResponse(res);
       }
     } else {
       throw new Error('Received network response without frameId');
     }
   }
+  onRequestWillBeSent(req: Network.RequestWillBeSentParameters) {
+    if (req.frameId) {
+      const nav = this.frames[req.frameId];
+      if (nav) {
+        nav.onRequestWillBeSent(req);
+      }
+    } else {
+      throw new Error('Received "request will be sent" event without frameId');
+    }
+  }
   onNavigationComplete(result: Page.FrameNavigatedParameters) {
     const nav = this.frames[result.frame.id];
     if (nav) {
-      nav.onNavigationComplete(result);
+      nav.onNavigationComplete();
     }
   }
+
   onLoadEvent() {
-    if (this.loadResolver) {
-      this.loadResolver();
-    }
+    Object.keys(this.frames).forEach((frameId) => {
+      this.frames[frameId].onLoadEvent();
+    });
   }
-}
-
-/**
- * Represents the result of a navigation
- * @public
- */
-export interface PageNavigateResult {
-  networkResult: Network.ResponseReceivedParameters;
-  frame: Page.Frame;
-}
-
-/**
- * Represents the result of a navigation that includes a body response
- * @public
- */
-export interface NavigateResult extends PageNavigateResult {
-  body: Network.GetResponseBodyReturn;
 }

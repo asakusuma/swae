@@ -4,11 +4,14 @@ import {
   IndexedDB,
   CacheStorage,
   Network,
-  Runtime
+  Runtime,
+  Target
 } from 'chrome-debugging-client/dist/protocol/tot';
 import { IDebuggingProtocolClient, ISession } from 'chrome-debugging-client';
 import { ServiceWorkerState } from './service-worker-state';
-import { FrameStore, NavigateResult } from './frame';
+import {
+  FrameStore
+} from './frame';
 
 /**
  * @public
@@ -46,9 +49,28 @@ function isAbsolutePath(url: string) {
 }
 
 
-interface NavigateOptions {
+export interface NavigateOptions {
   targetUrl?: string;
-  waitForLoad?: boolean;
+}
+
+export interface PageLoadResult {
+  page: CapturedResponse;
+  childResponses: CapturedResponseHash;
+  frame: Page.Frame;
+}
+
+export interface CapturedResponseHash {
+  [url: string]: CapturedResponse;
+}
+
+export interface CapturedResponse {
+  responseMeta: Network.Response;
+  body: string;
+}
+
+export interface PageNavigateResult {
+  page: CapturedResponse;
+  frame: Page.Frame;
 }
 
 /**
@@ -67,6 +89,7 @@ export class ClientEnvironment {
 
   private tabClient: IDebuggingProtocolClient;
   private frameStore: FrameStore;
+  private targetDomain: Target;
 
   private constructor(
     session: ISession,
@@ -83,10 +106,12 @@ export class ClientEnvironment {
     this.cacheStorage = new CacheStorage(tabClient);
     this.network = new Network(tabClient);
     this.swState = new ServiceWorkerState(session, browserClient, this.serviceWorker);
+    this.targetDomain = new Target(browserClient);
 
     this.frameStore = new FrameStore();
 
     this.network.responseReceived = this.frameStore.onNetworkResponse.bind(this.frameStore);
+    this.network.requestWillBeSent = this.frameStore.onRequestWillBeSent.bind(this.frameStore);
     this.page.frameNavigated = this.frameStore.onNavigationComplete.bind(this.frameStore);
     this.page.loadEventFired = this.frameStore.onLoadEvent.bind(this.frameStore);
     this.targetId = targetId;
@@ -123,6 +148,7 @@ export class ClientEnvironment {
     this.swState.ensureNoErrors();
     // close() MUST be called after ensureNoErrors. Close cleans up everything, including the error list.
     this.swState.close();
+    await this.targetDomain.closeTarget({targetId: this.targetId});
   }
 
   public waitForServiceWorkerRegistration() {
@@ -205,32 +231,61 @@ export class ClientEnvironment {
     */
   }
 
-  public async clearBrowserCache() {
-    await this.network.clearBrowserCache();
+  private async buildCapturedResponse(response: Network.ResponseReceivedParameters): Promise<CapturedResponse> {
+    return {
+      responseMeta: response.response,
+      body: (await this.network.getResponseBody({requestId: response.requestId})).body
+    };
   }
 
-  public async navigate(arg?: string | NavigateOptions): Promise<NavigateResult> {
+  /**
+   * Load page in active tab. Resolves on initial HTTP response. To wait for a page's load event, and
+   * also recieve all asset response data, use load() method instead.
+   * @return Initial HTTP response and page frame data
+   */
+  public async navigate(arg?: string | NavigateOptions): Promise<PageNavigateResult> {
+    const {page, frame} = await this.privateNavigate(false, arg);
+    return {page, frame};
+  }
+
+  /**
+   * Load page in active tab. Resolves once both the page's load event is fired and all asset responses are recieved.
+   * To wait only for initial HTTP response, use navigate() method instead.
+   * * @return All asset responses and page frame data
+   */
+  public async load(arg?: string | NavigateOptions): Promise<PageLoadResult> {
+    const {responses, page, frame} = await this.privateNavigate(true, arg);
+
+    const capturedResponses: CapturedResponse[] = await Promise.all(responses.map((response) => {
+      return this.buildCapturedResponse(response);
+    }));
+
+    const childResponses = capturedResponses.reduce((responseHash, response) => {
+      // We already have the page response as a separate object, don't include it here
+      if (response.responseMeta.url !== page.responseMeta.url) {
+        responseHash[response.responseMeta.url] = response;
+      }
+      return responseHash;
+    }, {} as CapturedResponseHash);
+    return {
+      page,
+      childResponses,
+      frame
+    };
+  }
+
+  private async privateNavigate(waitForLoad: boolean, arg?: string | NavigateOptions) {
     const targetUrl = arg ? typeof arg === 'string' ? arg : arg.targetUrl : null;
     const url = targetUrl ? this.getAbsoluteUrl(targetUrl) : this.rootUrl;
-    const waitForLoad = typeof arg === 'object' && arg.waitForLoad;
 
     const tree = await this.page.getFrameTree();
-    const frameId = tree.frameTree.frame.id;
+    const frame = tree.frameTree.frame;
 
-    const navPromise = this.frameStore.start(frameId, waitForLoad);
+    const navPromise = this.frameStore.start(frame.id, waitForLoad);
     await this.page.navigate({ url });
-
-    const { networkResult, frame } = await navPromise;
-
-    const body = await this.network.getResponseBody({
-      requestId: networkResult.requestId
-    });
-
-    return {
-      networkResult,
-      frame,
-      body
-    };
+    const responses = await navPromise;
+    const page = await this.buildCapturedResponse(this.findPageResponse(responses, url));
+    return {responses, page, frame};
   }
 
   private getAbsoluteUrl(targetUrl: string) {
@@ -238,5 +293,24 @@ export class ClientEnvironment {
       return targetUrl;
     }
     return this.rootUrl + targetUrl;
+  }
+
+  private findResponse(responses: Network.ResponseReceivedParameters[], url: string) {
+    return responses.find((item) => { return item.response.url === url; });
+  }
+
+  private findPageResponse(responses: Network.ResponseReceivedParameters[], url: string) {
+    const urlResult = this.findResponse(responses, url);
+    if (urlResult) {
+      return urlResult;
+    }
+
+    const slashedUrl = `${url}/`;
+    const slashedUrlResult = this.findResponse(responses, slashedUrl);
+    if (slashedUrlResult) {
+      return slashedUrlResult;
+    }
+
+    throw new Error(`Couldn't match shell url (${url}) to a captured response`);
   }
 }
