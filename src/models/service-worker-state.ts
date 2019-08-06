@@ -299,6 +299,7 @@ export class ServiceWorkerState {
     return addTimeout(new Promise((resolve) => {
       this.listen(id, (result) => {
         // Wait until the next tick so that any state changes take effect first
+        // tslint:disable-next-line:no-floating-promises
         Promise.resolve().then(() => {
           resolve(result);
         });
