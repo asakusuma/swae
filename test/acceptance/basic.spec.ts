@@ -58,8 +58,9 @@ describe('Service Worker', () => {
 
       // TODO: Figure out why test sometimes fails without this wait
       await wait(500);
+      console.log(sw);
       const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
-      expect(controlledClients).to.equal(2);
+      expect(controlledClients, 'There should be two controlled clients').to.equal(2);
 
       const { page } = await client2.load();
 
@@ -74,7 +75,7 @@ describe('Service Worker', () => {
       await testEnv.activateTabByIndex(0);
 
       const { page: page2 } = await client1.load();
-      expect(page2.responseMeta.fromServiceWorker).to.be.true;
+      expect(page2.responseMeta.fromServiceWorker, 'Response should be from the service worker').to.be.true;
       expect(page2.body.indexOf('from-service-worker') > 0).to.be.true;
     });
   });
@@ -90,6 +91,8 @@ describe('Service Worker', () => {
         });
 
         await client.swState.waitForActivated();
+
+        console.log('Past wait for activated');
 
         await client.evaluate(function() {
           return navigator.serviceWorker.getRegistration().then((sw) => {
