@@ -56,6 +56,8 @@ describe('Service Worker', () => {
 
       const sw = await client2.swState.waitForActivated();
 
+      // TODO: Figure out why test sometimes fails without this wait
+      await wait(500);
       const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
       expect(controlledClients).to.equal(2);
 

@@ -1,5 +1,5 @@
 import { platform } from 'os';
-import execa, { ExecaReturns } from 'execa';
+import execa, { ExecaReturnValue } from 'execa';
 import mkdirp from 'mkdirp';
 
 const HFS_MINIMUM = 1100;
@@ -7,7 +7,7 @@ const HFS_MINIMUM = 1100;
 export interface DiskHandle {
   mountPath: string;
   filePath: string;
-  eject: () => Promise<ExecaReturns>;
+  eject: () => Promise<ExecaReturnValue>;
 }
 
 function generateDriveName() {
@@ -16,7 +16,7 @@ function generateDriveName() {
 
 function eject(path: string) {
   const command = platform() === 'darwin' ? `diskutil eject ${path} -force` : `sudo umount ${path}`;
-  return execa.shell(command).catch((e) => {
+  return execa.command(command, { shell: true }).catch((e) => {
     throw new Error(`Failed to eject disk: ${e.message}`);
   });
 }
@@ -45,7 +45,7 @@ export async function mountRamDisk(size: number, name: string = generateDriveNam
     throw new Error('mountRamDisk can only be run on Mac or Linux');
   }
 
-  return execa.shell(command).then((result) => {
+  return execa.command(command, { shell: true }).then((result) => {
     let filePath = '';
     if (p === 'darwin') {
       // TODO: Better way of resolving the file path of the disk
