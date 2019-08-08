@@ -1,18 +1,22 @@
 import { expect } from 'chai';
-import { TestSession, mountRamDisk } from './../../src';
 import { createServer } from './../server/';
+import { TestSession, mountRamDisk } from './../../src';
+
 import {
   wait
 } from './utils';
 
-const session = new TestSession(createServer(), { browserOptions: { browserType: 'canary' }});
+
+const session = new TestSession(createServer(), { browserOptions: {
+  headless: true
+}});
 before(session.ready.bind(session));
 after(session.close.bind(session));
 
 describe('Service Worker', () => {
   it('should have a version', async () => {
     await session.run(async (testEnv) => {
-      const client = await testEnv.createTarget();
+      const client = await testEnv.createTab();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -26,7 +30,7 @@ describe('Service Worker', () => {
 
   it('should intercept basepage request and add meta tag', async () => {
     await session.run(async (testEnv) => {
-      const client = await testEnv.createTarget();
+      const client = await testEnv.createTab();
       await client.navigate();
 
       await client.evaluate(function() {
@@ -44,20 +48,21 @@ describe('Service Worker', () => {
 
   it('should intercept basepage request for tabs that were created before the worker was registered', async () => {
     await session.run(async (testEnv) => {
-      const client1 = await testEnv.createTarget();
+      const client1 = await testEnv.createTab();
       await client1.load();
 
-      const client2 = await testEnv.createAndActivateTab();
+      const client2 = await testEnv.createTab();
 
       await client2.load();
       await client2.evaluate(function() {
         return navigator.serviceWorker.register('/sw.js');
       });
 
-      const sw = await client2.swState.waitForActivated();
-
-      const controlledClients = sw.controlledClients ? sw.controlledClients.length : 0;
-      expect(controlledClients).to.equal(2);
+      await client2.swState.waitForVersionUpdate((version) => {
+        return !!(version.status === 'activated' &&
+          version.runningStatus === 'running' &&
+          version.controlledClients && version.controlledClients.length === 2);
+      }, 'Activated worker with 2 controlled clients');
 
       const { page } = await client2.load();
 
@@ -80,7 +85,7 @@ describe('Service Worker', () => {
   it('should throw on service worker error by default', async () => {
     const shouldReject = async () => {
       await session.run(async (testEnv) => {
-        const client = await testEnv.createTarget();
+        const client = await testEnv.createTab();
         await client.navigate();
 
         await client.evaluate(function() {
@@ -111,7 +116,7 @@ describe('Service Worker', () => {
 
   it('should not throw on service worker error if error is caught', async () => {
     await session.run(async (testEnv) => {
-      const client = await testEnv.createTarget();
+      const client = await testEnv.createTab();
 
       // Catch errors and don't re-throw
       client.swState.catchErrors(() => {});
@@ -140,7 +145,7 @@ describe('Service Worker', () => {
 
   it('active version should only change after skipWaiting', async () => {
     await session.run(async (testEnv) => {
-      const client = await testEnv.createTarget();
+      const client = await testEnv.createTab();
 
       await client.navigate();
 
@@ -150,10 +155,12 @@ describe('Service Worker', () => {
         });
       });
 
-      await client.swState.waitForActivated();
+      const firstVersion = await client.swState.waitForActivated();
 
       await testEnv.getTestServer().incrementVersion();
 
+      const waitForNextInstalled = client.swState.waitForNextInstalled(firstVersion);
+
       await client.navigate();
 
       await client.evaluate(function() {
@@ -162,9 +169,7 @@ describe('Service Worker', () => {
         });
       });
 
-      await client.waitForServiceWorkerRegistration();
-
-      await client.swState.waitForInstalled('1');
+      await waitForNextInstalled;
 
       const swState2 = await client.swState.getActive();
       expect(swState2.versionId).to.equal('0', 'Should be at version 0 even after 1 installs');
@@ -183,13 +188,14 @@ describe('Service Worker', () => {
     try {
       try {
         await session.run(async (testEnv) => {
-          const client = await testEnv.createTarget();
+          const client = await testEnv.createTab();
 
           await client.navigate();
 
           await client.evaluate(function() {
             return navigator.serviceWorker.register('/sw.js');
           });
+
           // await client.ensureMaximumStorageAvailable(1000);
           await client.swState.waitForActivated();
 

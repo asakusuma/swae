@@ -1,31 +1,38 @@
-import { ServiceWorkerState, IServiceWorker } from './../../src';
-import {
-  ServiceWorker
-} from 'chrome-debugging-client/dist/protocol/tot';
-import { createSession } from 'chrome-debugging-client';
+import { ServiceWorkerState, IPage } from './../../src';
+import { MappedEvent, EventMapping } from 'chrome-debugging-client';
 
-class TestServiceWorker implements IServiceWorker {
-  public workerErrorReported: ServiceWorker.WorkerErrorReportedHandler;
-  public workerRegistrationUpdated: ServiceWorker.WorkerRegistrationUpdatedHandler;
-  public workerVersionUpdated: ServiceWorker.WorkerVersionUpdatedHandler;
+type Scenario = (state: ServiceWorkerState, page: TestPage) => Promise<void>;
 
-  skipWaiting() {
-    return Promise.resolve();
+class TestPage implements IPage {
+  listeners: {
+    [key: string]: Function[]
+  } = {};
+  send() {
+    return null as any;
+  }
+  on<E extends MappedEvent>(
+    event: E,
+    listener: (event: EventMapping[E]) => void,
+  ) {
+    this.listeners[event] = this.listeners[event] || [];
+    this.listeners[event].push(listener);
+  }
+  trigger<E extends MappedEvent>(
+    event: E,
+    eventParam: EventMapping[E]
+  ) {
+    const listeners = this.listeners[event];
+    for (let i = 0; i < listeners.length; i++) {
+      listeners[i](eventParam);
+    }
+  }
+  until() {
+    return null as any;
   }
 }
 
-type Scenario = (state: ServiceWorkerState, sw: TestServiceWorker) => Promise<void>;
-
 export async function runMockScenario(cb: Scenario) {
-  await createSession(async (session) => {
-    const sw = new TestServiceWorker();
-    const browser = await session.spawnBrowser({
-      additionalArguments: ['--headless'],
-    });
-    const browserClient = await session.openDebuggingProtocol(
-      browser.webSocketDebuggerUrl!,
-    );
-    const state = new ServiceWorkerState(session, browserClient, sw);
-    await cb(state, sw);
-  });
+  const page = new TestPage();
+  const state = new ServiceWorkerState(page);
+  await cb(state, page);
 }
