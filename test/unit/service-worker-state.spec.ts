@@ -4,9 +4,9 @@ import { runMockScenario } from './utils';
 describe('Service Worker State', () => {
   describe('waitForActivated', () => {
     it('should wait for activation event', async () => {
-      await runMockScenario(async (state, sw) => {
+      await runMockScenario(async (state, page) => {
         const activatedPromise = state.waitForActivated();
-        sw.workerVersionUpdated({
+        page.trigger('ServiceWorker.workerVersionUpdated', {
           versions: [{
             versionId: '0',
             registrationId: '0',
@@ -22,8 +22,8 @@ describe('Service Worker State', () => {
     });
 
     it('should wait for activation event when passed a version after the event happens', async () => {
-      await runMockScenario(async (state, sw) => {
-        sw.workerVersionUpdated({
+      await runMockScenario(async (state, page) => {
+        page.trigger('ServiceWorker.workerVersionUpdated', {
           versions: [{
             versionId: '1',
             registrationId: '0',
@@ -39,9 +39,9 @@ describe('Service Worker State', () => {
     });
 
     it('should wait for activation event when passed a version before the event happens', async () => {
-      await runMockScenario(async (state, sw) => {
+      await runMockScenario(async (state, page) => {
         const activatedPromise = state.waitForActivated('1');
-        sw.workerVersionUpdated({
+        page.trigger('ServiceWorker.workerVersionUpdated', {
           versions: [{
             versionId: '1',
             registrationId: '0',
@@ -57,8 +57,8 @@ describe('Service Worker State', () => {
     });
 
     it('should wait for retroactive activation event with multiple listeners', async () => {
-      await runMockScenario(async (state, sw) => {
-        sw.workerVersionUpdated({
+      await runMockScenario(async (state, page) => {
+        page.trigger('ServiceWorker.workerVersionUpdated', {
           versions: [{
             versionId: '1',
             registrationId: '0',
@@ -76,10 +76,10 @@ describe('Service Worker State', () => {
     });
 
     it('should wait for activation event with multiple listeners', async () => {
-      await runMockScenario(async (state, sw) => {
+      await runMockScenario(async (state, page) => {
         const activatedPromise = state.waitForActivated('1');
         const activatedPromise2 = state.waitForActivated('1');
-        sw.workerVersionUpdated({
+        page.trigger('ServiceWorker.workerVersionUpdated', {
           versions: [{
             versionId: '1',
             registrationId: '0',

@@ -1,17 +1,14 @@
-import {
-  Network,
-  Page
-} from 'chrome-debugging-client/dist/protocol/tot';
+import Protocol from 'devtools-protocol';
 
 /**
  * Represents a frame transition from one page to another
  * @public
  */
 export class FrameNavigation {
-  private resolve: (res: Network.ResponseReceivedParameters[]) => void;
-  private promise: Promise<Network.ResponseReceivedParameters[]>;
+  private resolve: (res: Protocol.Network.ResponseReceivedEvent[]) => void;
+  private promise: Promise<Protocol.Network.ResponseReceivedEvent[]>;
   private outstandingRequests: Set<string>;
-  private responses: Network.ResponseReceivedParameters[];
+  private responses: Protocol.Network.ResponseReceivedEvent[];
   private waitForLoad: boolean;
   private onLoadEventFired: boolean;
 
@@ -32,7 +29,7 @@ export class FrameNavigation {
     });
   }
 
-  onRequestWillBeSent(req: Network.RequestWillBeSentParameters) {
+  onRequestWillBeSent(req: Protocol.Network.RequestWillBeSentEvent) {
     this.outstandingRequests.add(req.requestId);
   }
 
@@ -42,7 +39,7 @@ export class FrameNavigation {
     }
   }
 
-  onNetworkResponse(res: Network.ResponseReceivedParameters) {
+  onNetworkResponse(res: Protocol.Network.ResponseReceivedEvent) {
     this.responses.push(res);
     this.outstandingRequests.delete(res.requestId);
     this.resolveIfComplete();
@@ -54,7 +51,7 @@ export class FrameNavigation {
     }
   }
 
-  getPromise(): Promise<Network.ResponseReceivedParameters[]> {
+  getPromise(): Promise<Protocol.Network.ResponseReceivedEvent[]> {
     return this.promise;
   }
 
@@ -74,13 +71,13 @@ export class FrameStore {
   constructor() {
     this.frames = {};
   }
-  start(frameId: string, waitForLoad: boolean): Promise<Network.ResponseReceivedParameters[]> {
+  start(frameId: string, waitForLoad: boolean): Promise<Protocol.Network.ResponseReceivedEvent[]> {
     const nav = new FrameNavigation(waitForLoad);
     this.frames[frameId] = nav;
     const navPromise = nav.getPromise();
     return navPromise;
   }
-  onNetworkResponse(res: Network.ResponseReceivedParameters) {
+  onNetworkResponse(res: Protocol.Network.ResponseReceivedEvent) {
     if (res.frameId) {
       const nav = this.frames[res.frameId];
       if (nav) {
@@ -90,7 +87,7 @@ export class FrameStore {
       throw new Error('Received network response without frameId');
     }
   }
-  onRequestWillBeSent(req: Network.RequestWillBeSentParameters) {
+  onRequestWillBeSent(req: Protocol.Network.RequestWillBeSentEvent) {
     if (req.frameId) {
       const nav = this.frames[req.frameId];
       if (nav) {
@@ -100,7 +97,7 @@ export class FrameStore {
       throw new Error('Received "request will be sent" event without frameId');
     }
   }
-  onNavigationComplete(result: Page.FrameNavigatedParameters) {
+  onNavigationComplete(result: Protocol.Page.FrameNavigatedEvent) {
     const nav = this.frames[result.frame.id];
     if (nav) {
       nav.onNavigationComplete();

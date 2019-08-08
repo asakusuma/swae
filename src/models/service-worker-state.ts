@@ -1,17 +1,23 @@
+import Protocol from 'devtools-protocol';
 import {
-  ServiceWorker, Network
-} from 'chrome-debugging-client/dist/protocol/tot';
-import { ISession, IDebuggingProtocolClient } from 'chrome-debugging-client';
+  RequestMapping,
+  ResponseMapping,
+  MappedEvent,
+  EventMapping,
+  EventPredicate,
+  MappedRequestMethod
+} from 'chrome-debugging-client';
+import { RaceCancellation } from 'race-cancellation';
 
 export interface VersionStatusIdentifier {
-  status: ServiceWorker.ServiceWorkerVersionStatus;
+  status: Protocol.ServiceWorker.ServiceWorkerVersionStatus;
   version?: string;
-  runningStatus?: ServiceWorker.ServiceWorkerVersionRunningStatus;
+  runningStatus?: Protocol.ServiceWorker.ServiceWorkerVersionRunningStatus;
 }
 
 type SerializedStateIdentifier = string;
 
-function identifierFromVersion(v: ServiceWorker.ServiceWorkerVersion): VersionStatusIdentifier {
+function identifierFromVersion(v: Protocol.ServiceWorker.ServiceWorkerVersion): VersionStatusIdentifier {
   return {
     version: v.versionId,
     status: v.status,
@@ -67,34 +73,32 @@ class StateIdArrayMap<V> extends Map<any, V[]> {
  * the raw API for the ServiceWorker DevTools protocl domain
  * @public
  */
+/*
 export interface IServiceWorker {
-  skipWaiting: (params: ServiceWorker.SkipWaitingParameters) => Promise<void>;
+  skipWaiting: (params: Protocol.ServiceWorker.SkipWaitingRequest) => Promise<void>;
 
-  workerErrorReported: ServiceWorker.WorkerErrorReportedHandler | null;
-  workerRegistrationUpdated: ServiceWorker.WorkerRegistrationUpdatedHandler | null;
-  workerVersionUpdated: ServiceWorker.WorkerVersionUpdatedHandler | null;
+  workerErrorReported: Protocol.ServiceWorker.WorkerErrorReportedEvent | null;
+  workerRegistrationUpdated: Protocol.ServiceWorker.WorkerRegistrationUpdatedEvent | null;
+  workerVersionUpdated: Protocol.ServiceWorker.WorkerVersionUpdatedEvent | null;
 
   // Set all the other methods as optional until we actually start using them
-  deliverPushMessage?: (params: ServiceWorker.DeliverPushMessageParameters) => Promise<void>;
+  deliverPushMessage?: (params: Protocol.ServiceWorker.DeliverPushMessageRequest) => Promise<void>;
   disable?: () => Promise<void>;
-  dispatchSyncEvent?: (params: ServiceWorker.DispatchSyncEventParameters) => Promise<void>;
+  dispatchSyncEvent?: (params: Protocol.ServiceWorker.DispatchSyncEventRequest) => Promise<void>;
   enable?: () => Promise<void>;
-  inspectWorker?: (params: ServiceWorker.InspectWorkerParameters) => Promise<void>;
-  setForceUpdateOnPageLoad?: (params: ServiceWorker.SetForceUpdateOnPageLoadParameters) => Promise<void>;
-  startWorker?: (params: ServiceWorker.StartWorkerParameters) => Promise<void>;
+  inspectWorker?: (params: Protocol.ServiceWorker.InspectWorkerRequest) => Promise<void>;
+  setForceUpdateOnPageLoad?: (params: Protocol.ServiceWorker.SetForceUpdateOnPageLoadRequest) => Promise<void>;
+  startWorker?: (params: Protocol.ServiceWorker.StartWorkerRequest) => Promise<void>;
   stopAllWorkers?: () => Promise<void>;
-  stopWorker?: (params: ServiceWorker.StopWorkerParameters) => Promise<void>;
-  unregister?: (params: ServiceWorker.UnregisterParameters) => Promise<void>;
-  updateRegistration?: (params: ServiceWorker.UpdateRegistrationParameters) => Promise<void>;
+  stopWorker?: (params: Protocol.ServiceWorker.StopWorkerRequest) => Promise<void>;
+  unregister?: (params: Protocol.ServiceWorker.UnregisterRequest) => Promise<void>;
+  updateRegistration?: (params: Protocol.ServiceWorker.UpdateRegistrationRequest) => Promise<void>;
 }
+*/
 
-type VersionListener = (v: ServiceWorker.ServiceWorkerVersion) => void;
+type VersionListener = (v: Protocol.ServiceWorker.ServiceWorkerVersion) => void;
 
-interface ServiceWorkerCore {
-  client: IDebuggingProtocolClient;
-  networkDomain: Network;
-}
-
+/*
 class ServiceWorkerProtocolSession {
   private core: Promise<ServiceWorkerCore>;
   constructor(public targetId: string, clientP: Promise<IDebuggingProtocolClient>) {
@@ -110,17 +114,9 @@ class ServiceWorkerProtocolSession {
   public async emulateOffline(offline: boolean) {
     await this.core;
     throw new Error('Offline emulation not working. See https://bugs.chromium.org/p/chromium/issues/detail?id=852127');
-    /*
-    const { networkDomain } = await this.core;
-    if (offline) {
-      console.log('sw emulate', this.targetId);
-      await emulateOffline(networkDomain);
-    } else {
-      await turnOffEmulateOffline(networkDomain);
-    }
-    */
   }
 }
+*/
 
 /**
  * ServiceWorkerState config options
@@ -130,7 +126,24 @@ export interface IServiceWorkerStateOptions {
   log?: boolean;
 }
 
-export type ServiceWorkerErrorCallback = (err: ServiceWorker.ServiceWorkerErrorMessage) => void;
+export type ServiceWorkerErrorCallback = (err: Protocol.ServiceWorker.ServiceWorkerErrorMessage) => void;
+
+export interface IPage {
+  send<M extends MappedRequestMethod>(
+    method: M,
+    request: RequestMapping[M],
+    raceCancellation?: RaceCancellation,
+  ): Promise<ResponseMapping[M]>;
+  on<E extends MappedEvent>(
+    event: E,
+    listener: (event: EventMapping[E]) => void,
+  ): void;
+  until<E extends MappedEvent>(
+    event: E,
+    predicate?: EventPredicate<EventMapping[E]>,
+    raceCancellation?: RaceCancellation,
+  ): Promise<EventMapping[E]>;
+}
 
 /**
  * Models the state of Service Workers for a particular client
@@ -140,28 +153,23 @@ export type ServiceWorkerErrorCallback = (err: ServiceWorker.ServiceWorkerErrorM
  * @internal
  */
 export class ServiceWorkerState {
-  private versions: Map<number, ServiceWorker.ServiceWorkerVersion>;
-  private active: ServiceWorker.ServiceWorkerVersion;
-  private lastInstalled: ServiceWorker.ServiceWorkerVersion;
-
-  private serviceWorker: IServiceWorker;
+  private versions: Map<number, Protocol.ServiceWorker.ServiceWorkerVersion>;
+  private active: Protocol.ServiceWorker.ServiceWorkerVersion;
+  private lastInstalled: Protocol.ServiceWorker.ServiceWorkerVersion;
 
   private log: boolean;
-  private errors: ServiceWorker.ServiceWorkerErrorMessage[];
+  private errors: Protocol.ServiceWorker.ServiceWorkerErrorMessage[];
 
   private stateListeners: StateIdArrayMap<VersionListener>;
-  private stateHistory: StateIdMap<ServiceWorker.ServiceWorkerVersion>;
+  private stateHistory: StateIdMap<Protocol.ServiceWorker.ServiceWorkerVersion>;
+  private page: IPage;
 
-  private targets: Map<string, ServiceWorkerProtocolSession>;
-  private session: ISession;
-  private browserClient: IDebuggingProtocolClient;
+  // private targets: Map<string, ServiceWorkerProtocolSession>;
 
   private errorCallbacks: ServiceWorkerErrorCallback[];
 
   constructor(
-    session: ISession,
-    browserClient: IDebuggingProtocolClient,
-    serviceWorker: IServiceWorker,
+    page: IPage,
     options: IServiceWorkerStateOptions = {}
   ) {
     this.versions = new Map();
@@ -169,28 +177,25 @@ export class ServiceWorkerState {
     this.stateHistory = new StateIdMap();
     this.log = !!options.log;
 
-    this.targets = new Map();
-    this.session = session;
-    this.browserClient = browserClient;
-
+    // this.targets = new Map();
     this.errorCallbacks = [];
 
     this.errors = [];
 
+    this.page = page;
+
     // TODO: Somehow add ability to listen to network requests from the service worker
     // The service worker might be its own client
 
-    serviceWorker.workerVersionUpdated = ({ versions }) => {
+    page.on('ServiceWorker.workerVersionUpdated', ({ versions }) => {
       for (let version of versions) {
         this.recordVersion(version);
       }
-    };
+    });
 
-    serviceWorker.workerErrorReported = ({ errorMessage }) => {
+    page.on('ServiceWorker.workerErrorReported', ({ errorMessage }) => {
       this.errors.push(errorMessage);
-    };
-
-    this.serviceWorker = serviceWorker;
+    });
   }
   public catchErrors(cb: ServiceWorkerErrorCallback) {
     this.errorCallbacks.push(cb);
@@ -223,7 +228,7 @@ export class ServiceWorkerState {
     listeners.push(listener);
     this.stateListeners.set(id, listeners);
   }
-  private recordVersion(version: ServiceWorker.ServiceWorkerVersion) {
+  private recordVersion(version: Protocol.ServiceWorker.ServiceWorkerVersion) {
     if (this.log) {
       console.log('[sw]', version.status, version.runningStatus, version.versionId);
     }
@@ -231,11 +236,12 @@ export class ServiceWorkerState {
     const id = identifierFromVersion(version);
     this.stateHistory.set(id, version);
 
+    /*
     if (version.targetId && !this.targets.has(version.targetId)) {
       const attach = this.session.attachToTarget(this.browserClient, version.targetId);
       this.targets.set(version.targetId, new ServiceWorkerProtocolSession(version.targetId, attach));
     }
-
+    */
     if (version.status === 'activated' && version.runningStatus === 'running') {
       this.handleActivated(version);
     } else if (version.status === 'installed' && version.runningStatus === 'running') {
@@ -282,12 +288,43 @@ export class ServiceWorkerState {
     return this.waitForState('installed');
   }
 
+  public waitForNextInstalled(version: Protocol.ServiceWorker.ServiceWorkerVersion) {
+    return this.page.until('ServiceWorker.workerVersionUpdated', ({ versions }) => {
+      for (let i = 0; i < versions.length; i++) {
+        const { versionId, status, runningStatus } = versions[i];
+        if (status === 'installed' && runningStatus === 'running' && versionId > version.versionId) {
+          return true;
+        }
+      }
+      return false;
+    });
+  }
+
+  public waitForVersionUpdate(predicate: (v: Protocol.ServiceWorker.ServiceWorkerVersion) => boolean,
+    label: string, timeout: number = 1000): Promise<Protocol.ServiceWorker.WorkerVersionUpdatedEvent> {
+    return Promise.race([
+      this.page.until('ServiceWorker.workerVersionUpdated', ({ versions }) => {
+        for (let i = 0; i < versions.length; i++) {
+          if (predicate(versions[i])) {
+            return true;
+          }
+        }
+        return false;
+      }),
+      new Promise((_r, reject) => {
+        setTimeout(() => {
+          reject(`Timeout waiting for service worker version update: ${label}`);
+        }, timeout);
+      })
+    ]) as Promise<Protocol.ServiceWorker.WorkerVersionUpdatedEvent>;
+  }
+
   // Potentially tricky behavior: If you specify a version in addition to a state, will resolve if event
   // happened in the past. If you only provide a state, will NOT resolve if event happened in past
   // TODO: Add tests for above ^^
   // TODO: Need a more robust event listening engine now that we have 3 different properties on VersionStatusIdentifier
-  public waitForState(arg: VersionStatusIdentifier | ServiceWorker.ServiceWorkerVersionStatus):
-    Promise<ServiceWorker.ServiceWorkerVersion> {
+  public waitForState(arg: VersionStatusIdentifier | Protocol.ServiceWorker.ServiceWorkerVersionStatus):
+    Promise<Protocol.ServiceWorker.ServiceWorkerVersion> {
     const id: VersionStatusIdentifier = typeof arg === 'string' ? { status: arg } : arg;
     if (!id.runningStatus) {
       id.runningStatus = 'running';
@@ -307,11 +344,11 @@ export class ServiceWorkerState {
     }), `Waiting for service worker version ${id.version} to be ${id.status} timed out`, 10000);
   }
 
-  private handleActivated(version: ServiceWorker.ServiceWorkerVersion) {
+  private handleActivated(version: Protocol.ServiceWorker.ServiceWorkerVersion) {
     this.active = version;
   }
 
-  private handleInstalled(version: ServiceWorker.ServiceWorkerVersion) {
+  private handleInstalled(version: Protocol.ServiceWorker.ServiceWorkerVersion) {
     this.lastInstalled = version;
   }
 
@@ -327,7 +364,7 @@ export class ServiceWorkerState {
   }
 
   public skipWaiting() {
-    return this.serviceWorker.skipWaiting({
+    return this.page.send('ServiceWorker.skipWaiting', {
       scopeURL: '/'
     });
   }
@@ -347,7 +384,7 @@ export class ServiceWorkerState {
     this.versions.clear();
     this.stateListeners.clear();
     this.stateHistory.clear();
-    this.targets.clear();
+    // this.targets.clear();
     this.errorCallbacks = [];
   }
 }

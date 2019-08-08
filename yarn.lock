@@ -83,6 +83,63 @@
   resolved "https://registry.yarnpkg.com/@microsoft/tsdoc/-/tsdoc-0.12.10.tgz#c0e2c875c24a21da6d345d09189f5df4a1801d82"
   integrity sha512-tsog/HTdM88/WyR0Jz7XWTI0ghbJkt9soFXnQJrINDyaTGzbCoJjRttaW/IY5eAp4eqDyfg++jq6o+byEDOkIQ==
 
+"@tracerbench/find-chrome@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/find-chrome/-/find-chrome-1.0.1.tgz#4deb33d308f64e643344a3a59e3b1eb8bb46ec67"
+  integrity sha512-tR4iKB+m4ydVc1q0l7yMIzTPx7mxSCqC3EWgI7fv6q2wCjm0uzBLQgmCZkuovvvcHXuKNuMWGrhPhLR4qf8/bA==
+  dependencies:
+    chrome-launcher "^0.10.7"
+
+"@tracerbench/message-transport@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/message-transport/-/message-transport-1.0.1.tgz#30d48ddda07882d917841709e25a425452c26a81"
+  integrity sha512-W/dMlbNFLv1c2StqZbBYPI1lXgChThBlrCquk3asGrbu9q/g7fDvCZcMxMg+r8KORf+PJu9aV48LSinDJ72XkQ==
+
+"@tracerbench/protocol-connection@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/protocol-connection/-/protocol-connection-1.0.1.tgz#4a6e9631a72d8502b660372507152690cc35aa59"
+  integrity sha512-7o4NK4b+BXNsPf5hzqIHq1/lr76QFHPC5kFYSznS9w2tsrOfhNODEx0nAsVwI4E7Q1R/I/YH4Ow3XrCUiYz9Hw==
+  dependencies:
+    "@tracerbench/message-transport" "^1.0.1"
+    "@tracerbench/protocol-transport" "^1.0.1"
+    race-cancellation "^0.4.1"
+
+"@tracerbench/protocol-transport@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/protocol-transport/-/protocol-transport-1.0.1.tgz#026dfc10b81e96670b3fce415100d85653120b3c"
+  integrity sha512-35y84lEzE+EMF9cZBtT0yGWUR7QpVs4uiCxVKS0n7NXzW/pKO1Biv9ffbCilIhfhM1kN0LnBLHgMhbRt8E9TAg==
+  dependencies:
+    "@tracerbench/message-transport" "^1.0.1"
+    race-cancellation "^0.4.1"
+
+"@tracerbench/spawn-chrome@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/spawn-chrome/-/spawn-chrome-1.0.1.tgz#842588ef8d6e72e4b32d5bfb0883ee7d409dfdb8"
+  integrity sha512-Bw24Pd0F1BX2gQo+Di66XFV1iKBTYb1jKB1NDqM7cIFIq7ZyfrG7orF1Q6f7pgwKvOs5U9PRJ7TKG5dpaKBUNg==
+  dependencies:
+    "@tracerbench/find-chrome" "^1.0.1"
+    "@tracerbench/spawn" "^1.0.1"
+    tmp "^0.1.0"
+
+"@tracerbench/spawn@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/spawn/-/spawn-1.0.1.tgz#6fc328e6befe678b33a2a07ea9be0b59947b4b61"
+  integrity sha512-7JdUm/R1e3SCxSIT0fTl3z3ODpHMFBl5kpdFIo3ewyk2Hhg4qyVtHVxHqiFjIathdBisqnrPuNKBKFC5P3LHPw==
+  dependencies:
+    "@tracerbench/message-transport" "^1.0.1"
+    debug "^4.1.1"
+    execa "^2.0.2"
+    race-cancellation "^0.4.1"
+
+"@tracerbench/websocket-message-transport@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@tracerbench/websocket-message-transport/-/websocket-message-transport-1.0.1.tgz#2451f0c832869de80a839ade8892d52b7185b2a8"
+  integrity sha512-A80oZzTm1CeInEjrHG9BKL/MdoBRiT63kglySg0uODHPbGtrQ6N5XTsNs7rHPo28f3rueZWHtBSHapDjncHLHQ==
+  dependencies:
+    "@tracerbench/message-transport" "^1.0.1"
+    race-cancellation "^0.4.1"
+    ws "^7.0.1"
+
 "@types/argparse@1.0.33":
   version "1.0.33"
   resolved "https://registry.yarnpkg.com/@types/argparse/-/argparse-1.0.33.tgz#2728669427cdd74a99e53c9f457ca2866a37c52d"
@@ -171,11 +228,6 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-8.5.8.tgz#92509422653f10e9c0ac18d87e0610b39f9821c7"
   integrity sha512-8KmlRxwbKZfjUHFIt3q8TF5S2B+/E5BaAoo/3mgc5h6FJzqxXkCK/VMetO+IRDtwtU6HUvovHMBn+XRj7SV9Qg==
 
-"@types/node@^10.9.2":
-  version "10.14.14"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.14.14.tgz#a47955df2acf76ba7f0ac3b205d325da193dc9ad"
-  integrity sha512-xXD08vZsvpv4xptQXj1+ky22f7ZoKu5ZNI/4l+/BXG3X+XaeZsmaFbbTKuhSE3NjjvRuZFxFf9sQBMXIcZNFMQ==
-
 "@types/range-parser@*":
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.3.tgz#7ee330ba7caafb98090bece86a5ee44115904c2c"
@@ -188,18 +240,6 @@
   dependencies:
     "@types/express-serve-static-core" "*"
     "@types/mime" "*"
-
-"@types/tmp@^0.0.33":
-  version "0.0.33"
-  resolved "https://registry.yarnpkg.com/@types/tmp/-/tmp-0.0.33.tgz#1073c4bc824754ae3d10cfab88ab0237ba964e4d"
-  integrity sha1-EHPEvIJHVK49EM+riKsCN7qWTk0=
-
-"@types/ws@*":
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-6.0.2.tgz#f3340f7e3d7a07104a5dbcaa8ada4e8d2d45eecb"
-  integrity sha512-22XiR1ox9LftTaAtn/c5JCninwc7moaqbkJfaDUb7PkaUitcf5vbTZHdq9dxSMviCm9C3W85rzB8e6yNR70apQ==
-  dependencies:
-    "@types/node" "*"
 
 "@types/z-schema@3.16.31":
   version "3.16.31"
@@ -258,7 +298,7 @@ assertion-error@^1.1.0:
   resolved "https://registry.yarnpkg.com/assertion-error/-/assertion-error-1.1.0.tgz#e60b6b0e8f301bd97e5375215bda406c85118c0b"
   integrity sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==
 
-async-limiter@~1.0.0:
+async-limiter@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/async-limiter/-/async-limiter-1.0.1.tgz#dd379e94f0db8310b08291f9d64c3209766617fd"
   integrity sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==
@@ -345,20 +385,21 @@ check-error@^1.0.2:
   resolved "https://registry.yarnpkg.com/check-error/-/check-error-1.0.2.tgz#574d312edd88bb5dd8912e9286dd6c0aed4aac82"
   integrity sha1-V00xLt2Iu13YkS6Sht1sCu1KrII=
 
-chrome-debugging-client@^0.6.8:
-  version "0.6.8"
-  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-0.6.8.tgz#4fe6b3d338a1fb5c1a7581905ad7775df732c6aa"
-  integrity sha512-LpaTa7hQu/CHvfvk4mwpSSGDheayVheHX0Eui3wU4bWQjWvnrNvFV5YMZobDifkuJicabZcHWcXQE4msTNxRIg==
+chrome-debugging-client@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-1.0.1.tgz#8611481e5feba15983af860ff77fdb4ef8572357"
+  integrity sha512-clvnH4wOpz3ATXb2gUgdbdBEF6fsQbYpkQq2hNsySFZ3HyQOwWKEy6HTTZTaqLdThckBDph+0ged+rCpUzGXxA==
   dependencies:
-    "@types/node" "^10.9.2"
-    "@types/tmp" "^0.0.33"
-    "@types/ws" "*"
-    chrome-launcher "^0.10.2"
-    execa "^1.0.0"
-    tmp "^0.0.33"
-    ws "^6.0.0"
+    "@tracerbench/find-chrome" "^1.0.1"
+    "@tracerbench/message-transport" "^1.0.1"
+    "@tracerbench/protocol-connection" "^1.0.1"
+    "@tracerbench/spawn" "^1.0.1"
+    "@tracerbench/spawn-chrome" "^1.0.1"
+    "@tracerbench/websocket-message-transport" "^1.0.1"
+    debug "^4.1.1"
+    race-cancellation "^0.4.1"
 
-chrome-launcher@^0.10.2:
+chrome-launcher@^0.10.7:
   version "0.10.7"
   resolved "https://registry.yarnpkg.com/chrome-launcher/-/chrome-launcher-0.10.7.tgz#5e2a9e99f212e0501d9c7024802acd01a812f5d5"
   integrity sha512-IoQLp64s2n8OQuvKZwt77CscVj3UlV2Dj7yZtd1EBMld9mSdGcsGy9fN5hd/r4vJuWZR09it78n1+A17gB+AIQ==
@@ -457,6 +498,13 @@ debug@3.2.6:
   dependencies:
     ms "^2.1.1"
 
+debug@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.1.1.tgz#3b72260255109c6b589cee050f1d516139664791"
+  integrity sha512-pYAIzeRo8J6KPEaJ0VWOh5Pzkbw/RetuzehGM7QRRX5he4fPHx2rdKMB256ehJCkX+XRQm16eZLqLNS8RSZXZw==
+  dependencies:
+    ms "^2.1.1"
+
 decamelize@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/decamelize/-/decamelize-1.2.0.tgz#f6534d15148269b20352e7bee26f501f9a191290"
@@ -485,6 +533,11 @@ destroy@~1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.0.4.tgz#978857442c44749e4206613e37946205826abd80"
   integrity sha1-l4hXRCxEdJ5CBmE+N5RiBYJqvYA=
+
+devtools-protocol@^0.0.683290:
+  version "0.0.683290"
+  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.683290.tgz#57a45202a646af855cb5ac45f08d091ca26ff9e6"
+  integrity sha512-feEUDzwE48ST8NBENNGrTiht1SxoydQN8XFMrZUUzfOx9cAdPfxDoArwFz7xuACOMeqwL0wJHmdb3iiwrxUM+w==
 
 diff@3.5.0, diff@^3.2.0:
   version "3.5.0"
@@ -564,7 +617,7 @@ etag@~1.8.1:
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
   integrity sha1-Qa4u62XvpiJorr/qg6x9eSmbCIc=
 
-execa@*, execa@^2.0.3:
+execa@*, execa@^2.0.2, execa@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/execa/-/execa-2.0.3.tgz#4b84301b33042cfb622771e886ed0b10e5634642"
   integrity sha512-iM124nlyGSrXmuyZF1EMe83ESY2chIYVyDRZKgmcDynid2Q2v/+GuE7gNMl6Sy9Niwf4MC0DDxagOxeMPjuLsw==
@@ -1204,11 +1257,6 @@ os-locale@^3.0.0, os-locale@^3.1.0:
     lcid "^2.0.0"
     mem "^4.0.0"
 
-os-tmpdir@~1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/os-tmpdir/-/os-tmpdir-1.0.2.tgz#bbe67406c79aa85c5cfec766fe5734555dfa1274"
-  integrity sha1-u+Z0BseaqFxc/sdm/lc0VV36EnQ=
-
 os@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/os/-/os-0.1.1.tgz#208845e89e193ad4d971474b93947736a56d13f3"
@@ -1319,6 +1367,11 @@ qs@6.7.0:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.7.0.tgz#41dc1a015e3d581f1621776be31afb2876a9b1bc"
   integrity sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==
 
+race-cancellation@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/race-cancellation/-/race-cancellation-0.4.1.tgz#bd1c69bf5b836b56645a4b5b78fb9b973c46eb45"
+  integrity sha512-TF1vf4q/a5mwER9DoIuniE/qNIRM3Begyoe+21VUKgsyQAT4iIfSqlK7aG4Of1J1wzeATqVwbDP0dwX9GhaGcw==
+
 range-parser@~1.2.1:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/range-parser/-/range-parser-1.2.1.tgz#3cf37023d199e1c24d1a55b84800c2f3e6468031"
@@ -1363,7 +1416,7 @@ resolve@^1.3.2:
   dependencies:
     path-parse "^1.0.6"
 
-rimraf@^2.6.1:
+rimraf@^2.6.1, rimraf@^2.6.3:
   version "2.6.3"
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.3.tgz#b2d104fe0d8fb27cf9e0a1cda8262dd3833c6cab"
   integrity sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==
@@ -1532,12 +1585,12 @@ supports-color@^5.3.0:
   dependencies:
     has-flag "^3.0.0"
 
-tmp@^0.0.33:
-  version "0.0.33"
-  resolved "https://registry.yarnpkg.com/tmp/-/tmp-0.0.33.tgz#6d34335889768d21b2bcda0aa277ced3b1bfadf9"
-  integrity sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==
+tmp@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/tmp/-/tmp-0.1.0.tgz#ee434a4e22543082e294ba6201dcc6eafefa2877"
+  integrity sha512-J7Z2K08jbGcdA1kkQpJSqLF6T0tdQqpR2pnSUXsIchbPdTI9v3e85cLW0d6WDhwuAleOV71j2xWs8qMPfK7nKw==
   dependencies:
-    os-tmpdir "~1.0.2"
+    rimraf "^2.6.3"
 
 toidentifier@1.0.0:
   version "1.0.0"
@@ -1650,12 +1703,12 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=
 
-ws@^6.0.0:
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-6.2.1.tgz#442fdf0a47ed64f59b6a5d8ff130f4748ed524fb"
-  integrity sha512-GIyAXC2cB7LjvpgMt9EKS2ldqr0MTrORaleiOno6TweZ6r3TKtoFQWay/2PceJ3RuBasOHzXNn5Lrw1X0bEjqA==
+ws@^7.0.1:
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-7.1.1.tgz#f9942dc868b6dffb72c14fd8f2ba05f77a4d5983"
+  integrity sha512-o41D/WmDeca0BqYhsr3nJzQyg9NF5X8l/UdnFNux9cS3lwB+swm8qGWX5rn+aD6xfBU3rGmtHij7g7x6LxFU3A==
   dependencies:
-    async-limiter "~1.0.0"
+    async-limiter "^1.0.0"
 
 "y18n@^3.2.1 || ^4.0.0", y18n@^4.0.0:
   version "4.0.0"
