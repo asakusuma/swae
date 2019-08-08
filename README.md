@@ -17,7 +17,7 @@ after(session.close.bind(session));
 describe('Service Worker', () => {
   it('should respond to requests', async () => {
     await session.run(async (testEnv) => {
-      const client = testEnv.getActiveTabClient();
+      const client = await testEnv.createTab();
 
       await client.navigate();
 
