@@ -66,7 +66,7 @@ export interface TargetOptions {
   log?: boolean;
 }
 
-class Target {
+export class Target {
   private browserConnection: RootConnection;
   private targetId: string;
   private frameStore: FrameStore;
@@ -309,6 +309,7 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   private browserContextId: string;
 
   private tabIndex: Target[];
+  private activeTarget: Target;
 
   constructor(browserConnection: RootConnection, testServer: S, browserContextId: string) {
     this.testServer = testServer;
@@ -325,6 +326,7 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     this.tabIndex.push(target);
     await target.activate();
     await target.setupListeners();
+    this.activeTarget = target;
     return target;
   }
 
@@ -337,24 +339,23 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
       throw new Error('Invalid tab index');
     }
     await this.tabIndex[index].activate();
+    this.activeTarget = this.tabIndex[index];
   }
 
 
   public async close() {
     await Promise.all(this.tabIndex.map((target) => target.close()));
   }
-/*
-  public getActiveTabClient(): ClientEnvironment {
-    if (!this.activeClient) {
+
+  public getActiveTab(): Target {
+    if (!this.activeTarget) {
       throw new Error(`No active tab client exists. Have you tried creating one first?
         You can do so using TestEnvironment.createTarget()`);
     }
-    return this.activeClient;
+    return this.activeTarget;
   }
 
-  public getTestServer(): S {
-    return this.testServer;
-  }
+/*
 
   public async createTab(): Promise<ClientEnvironment> {
     return this.createTab();
