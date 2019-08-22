@@ -358,9 +358,9 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async activateTab(target: Target) {
-    const t = this.tabIndex.find((t) => t === target);
+    const t = this.tabIndex.find((tab) => tab === target);
     if (t) {
-      this.activateTarget(t);
+      await this.activateTarget(t);
     }
   }
 
@@ -370,8 +370,6 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   public async createTab(): Promise<ClientEnvironment> {
     return this.createTab();
   }
-
-  
 
   public async emulateOffline(offline: boolean = true) {
     throw new Error('Offline emulation not working. See https://bugs.chromium.org/p/chromium/issues/detail?id=852127');
@@ -413,8 +411,6 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     this.targetIdToClientEnv[targetId] = client;
     return client;
   }
-
-  
   */
 }
 
