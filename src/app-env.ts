@@ -70,18 +70,31 @@ export class Target {
   private browserConnection: RootConnection;
   private targetId: string;
   private frameStore: FrameStore;
-  private rootUrl: string;
-  private page: SessionConnection;
   private options: TargetOptions;
+
+  public rootUrl: string;
+  public page: SessionConnection;
   public swState: ServiceWorkerState;
 
-  private constructor(browserConnection: RootConnection, targetId: string, options: TargetOptions) {
+  private constructor(
+    browserConnection: RootConnection, page: SessionConnection, targetId: string, options: TargetOptions) {
     this.browserConnection = browserConnection;
     this.targetId = targetId;
     this.frameStore = new FrameStore();
     this.options = options;
     this.rootUrl = options.rootUrl;
+    this.page = page;
+
+    this.swState = new ServiceWorkerState(this.page, this.options);
+
+    // this.browserConnection.on('Network.responseReceived', this.frameStore.onNetworkResponse.bind(this.frameStore));
+
+    this.page.on('Network.responseReceived', this.frameStore.onNetworkResponse.bind(this.frameStore));
+    this.page.on('Network.requestWillBeSent', this.frameStore.onRequestWillBeSent.bind(this.frameStore));
+    this.page.on('Page.frameNavigated', this.frameStore.onNavigationComplete.bind(this.frameStore));
+    this.page.on('Page.loadEventFired', this.frameStore.onLoadEvent.bind(this.frameStore));
   }
+
   public async evaluate<T>(code: string | (() => T)): Promise<Protocol.Runtime.RemoteObject> {
     const expression = typeof code === 'string' ? code : `(${code.toString()}())`;
     const { result, exceptionDetails } = await this.page.send('Runtime.evaluate', {
@@ -101,32 +114,18 @@ export class Target {
     return this.browserConnection.send('Target.activateTarget', { targetId: this.targetId });
   }
 
-  public async setupListeners() {
-    const page = this.page = await this.browserConnection.attachToTarget(this.targetId);
-
-    await Promise.all([
-      this.page.send('Page.enable'),
-      this.page.send('Network.enable'),
-      this.page.send('ServiceWorker.enable')
-    ]);
-
-
-    this.swState = new ServiceWorkerState(page, this.options);
-
-    // this.browserConnection.on('Network.responseReceived', this.frameStore.onNetworkResponse.bind(this.frameStore));
-
-    page.on('Network.responseReceived', this.frameStore.onNetworkResponse.bind(this.frameStore));
-    page.on('Network.requestWillBeSent', this.frameStore.onRequestWillBeSent.bind(this.frameStore));
-    page.on('Page.frameNavigated', this.frameStore.onNavigationComplete.bind(this.frameStore));
-    page.on('Page.loadEventFired', this.frameStore.onLoadEvent.bind(this.frameStore));
-  }
-
   public static async create(browserConnection: RootConnection, browserContextId: string, options: TargetOptions) {
     const { targetId } = await browserConnection.send('Target.createTarget', {
       url: 'about:blank',
       browserContextId
     });
-    const target = new Target(browserConnection, targetId, options);
+    const page = await browserConnection.attachToTarget(targetId);
+    await Promise.all([
+      page.send('Page.enable'),
+      page.send('Network.enable'),
+      page.send('ServiceWorker.enable')
+    ]);
+    const target = new Target(browserConnection, page, targetId, options);
 
     // await target.setupListeners();
 
@@ -325,7 +324,6 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     });
     this.tabIndex.push(target);
     await target.activate();
-    await target.setupListeners();
     this.activeTarget = target;
     return target;
   }
@@ -338,8 +336,12 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     if (index < 0 || index >= this.tabIndex.length || !this.tabIndex[index]) {
       throw new Error('Invalid tab index');
     }
-    await this.tabIndex[index].activate();
-    this.activeTarget = this.tabIndex[index];
+    await this.activateTarget(this.tabIndex[index]);
+  }
+
+  private async activateTarget(target: Target) {
+    await target.activate();
+    this.activeTarget = target;
   }
 
 
@@ -355,15 +357,21 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     return this.activeTarget;
   }
 
+  public async activateTab(target: Target) {
+    const t = this.tabIndex.find((t) => t === target);
+    if (t) {
+      this.activateTarget(t);
+    }
+  }
+
+
 /*
 
   public async createTab(): Promise<ClientEnvironment> {
     return this.createTab();
   }
 
-  public activateTabById(id: string) {
-    return this.activateTab(id);
-  }
+  
 
   public async emulateOffline(offline: boolean = true) {
     throw new Error('Offline emulation not working. See https://bugs.chromium.org/p/chromium/issues/detail?id=852127');
@@ -406,12 +414,7 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     return client;
   }
 
-  private async activateTab(targetId: string) {
-    const client = this.targetIdToClientEnv[targetId];
-    this.activeClient = client;
-    // TODO: Migrate to sessionID
-    await this.targetDomain.activateTarget({ targetId });
-  }
+  
   */
 }
 
