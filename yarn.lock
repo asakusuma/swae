@@ -95,36 +95,36 @@
   resolved "https://registry.yarnpkg.com/@tracerbench/message-transport/-/message-transport-1.0.1.tgz#30d48ddda07882d917841709e25a425452c26a81"
   integrity sha512-W/dMlbNFLv1c2StqZbBYPI1lXgChThBlrCquk3asGrbu9q/g7fDvCZcMxMg+r8KORf+PJu9aV48LSinDJ72XkQ==
 
-"@tracerbench/protocol-connection@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@tracerbench/protocol-connection/-/protocol-connection-1.0.1.tgz#4a6e9631a72d8502b660372507152690cc35aa59"
-  integrity sha512-7o4NK4b+BXNsPf5hzqIHq1/lr76QFHPC5kFYSznS9w2tsrOfhNODEx0nAsVwI4E7Q1R/I/YH4Ow3XrCUiYz9Hw==
+"@tracerbench/protocol-connection@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@tracerbench/protocol-connection/-/protocol-connection-1.0.2.tgz#f6b9244b466484b866e8ede2d828a47f3b5d91ef"
+  integrity sha512-3A9p8jmD+5TgAy0Cl+RBpAnyDtu/+miH/ySURb6/1CCZotC1voQF+iq5psmE/0Se4ttI21MhoHfuE7QBRGoaQQ==
   dependencies:
     "@tracerbench/message-transport" "^1.0.1"
-    "@tracerbench/protocol-transport" "^1.0.1"
+    "@tracerbench/protocol-transport" "^1.0.2"
     race-cancellation "^0.4.1"
 
-"@tracerbench/protocol-transport@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@tracerbench/protocol-transport/-/protocol-transport-1.0.1.tgz#026dfc10b81e96670b3fce415100d85653120b3c"
-  integrity sha512-35y84lEzE+EMF9cZBtT0yGWUR7QpVs4uiCxVKS0n7NXzW/pKO1Biv9ffbCilIhfhM1kN0LnBLHgMhbRt8E9TAg==
+"@tracerbench/protocol-transport@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@tracerbench/protocol-transport/-/protocol-transport-1.0.2.tgz#642cba23c41560d75309735a0ef693471ed9c981"
+  integrity sha512-BuU8grUy/ZaoV9XZ3XevsoSZQwJfz+Ydlx+hZAkeLvr6akss95c1kHEul7HQlO3QiMk7y3KWOWS2yJI7H/DouQ==
   dependencies:
     "@tracerbench/message-transport" "^1.0.1"
     race-cancellation "^0.4.1"
 
-"@tracerbench/spawn-chrome@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@tracerbench/spawn-chrome/-/spawn-chrome-1.0.1.tgz#842588ef8d6e72e4b32d5bfb0883ee7d409dfdb8"
-  integrity sha512-Bw24Pd0F1BX2gQo+Di66XFV1iKBTYb1jKB1NDqM7cIFIq7ZyfrG7orF1Q6f7pgwKvOs5U9PRJ7TKG5dpaKBUNg==
+"@tracerbench/spawn-chrome@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@tracerbench/spawn-chrome/-/spawn-chrome-1.0.2.tgz#a231a75f5d64af29b68689bebd8a4ffcb9b3106e"
+  integrity sha512-/lxL7c6YZoMY7e2jGwfgEkCLtTfF+EX8HX+r76POSCKHgSU4CGusWBcUmRa2FK5ZmiP/WKe+AM8tSwXxGEOcMg==
   dependencies:
     "@tracerbench/find-chrome" "^1.0.1"
-    "@tracerbench/spawn" "^1.0.1"
+    "@tracerbench/spawn" "^1.0.2"
     tmp "^0.1.0"
 
-"@tracerbench/spawn@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@tracerbench/spawn/-/spawn-1.0.1.tgz#6fc328e6befe678b33a2a07ea9be0b59947b4b61"
-  integrity sha512-7JdUm/R1e3SCxSIT0fTl3z3ODpHMFBl5kpdFIo3ewyk2Hhg4qyVtHVxHqiFjIathdBisqnrPuNKBKFC5P3LHPw==
+"@tracerbench/spawn@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@tracerbench/spawn/-/spawn-1.0.2.tgz#ed1a729bde839f0680be95bc6668dff7bb1d5bcd"
+  integrity sha512-KGGTi9bUDfHBE8Ccmf5H9/3zNS16HCQetjaT9UpeBD6bOA70nXl8+6iLZ+Zl0pXs7xbKcRNowgkpwSWGMYpblA==
   dependencies:
     "@tracerbench/message-transport" "^1.0.1"
     debug "^4.1.1"
@@ -385,16 +385,16 @@ check-error@^1.0.2:
   resolved "https://registry.yarnpkg.com/check-error/-/check-error-1.0.2.tgz#574d312edd88bb5dd8912e9286dd6c0aed4aac82"
   integrity sha1-V00xLt2Iu13YkS6Sht1sCu1KrII=
 
-chrome-debugging-client@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-1.0.1.tgz#8611481e5feba15983af860ff77fdb4ef8572357"
-  integrity sha512-clvnH4wOpz3ATXb2gUgdbdBEF6fsQbYpkQq2hNsySFZ3HyQOwWKEy6HTTZTaqLdThckBDph+0ged+rCpUzGXxA==
+chrome-debugging-client@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/chrome-debugging-client/-/chrome-debugging-client-1.0.2.tgz#fb064af19f1cbfd6758d0e964807d43df5bed146"
+  integrity sha512-7fu3Ay9OVyCAtVsfF1U2IVitqq4gd1eYH2PtrK3v/9u5DZDYNQGBEKUo3lJYANBz/TEpwri5YTXc4BIN7Dk5jQ==
   dependencies:
     "@tracerbench/find-chrome" "^1.0.1"
     "@tracerbench/message-transport" "^1.0.1"
-    "@tracerbench/protocol-connection" "^1.0.1"
-    "@tracerbench/spawn" "^1.0.1"
-    "@tracerbench/spawn-chrome" "^1.0.1"
+    "@tracerbench/protocol-connection" "^1.0.2"
+    "@tracerbench/spawn" "^1.0.2"
+    "@tracerbench/spawn-chrome" "^1.0.2"
     "@tracerbench/websocket-message-transport" "^1.0.1"
     debug "^4.1.1"
     race-cancellation "^0.4.1"
