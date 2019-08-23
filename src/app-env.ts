@@ -5,6 +5,7 @@ import {
   FrameStore
 } from './models/frame';
 import { ServiceWorkerState } from './models/service-worker-state';
+import { addTimeout } from './timeout';
 // import { Target } from 'chrome-debugging-client/dist/protocol/tot';
 // import { Target } from 'devtools-protocol';
 
@@ -318,10 +319,10 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
   }
 
   public async createTab(debug?: boolean): Promise<Target> {
-    const target = await Target.create(this.browserConnection, this.browserContextId, {
+    const target = await addTimeout(Target.create(this.browserConnection, this.browserContextId, {
       rootUrl: this.testServer.rootUrl,
       log: debug
-    });
+    }), 'New tab creation timeout', 1000);
     this.tabIndex.push(target);
     await target.activate();
     this.activeTarget = target;
