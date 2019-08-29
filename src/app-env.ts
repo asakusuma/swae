@@ -65,6 +65,8 @@ export interface PageNavigateResult {
 export interface TargetOptions {
   rootUrl: string;
   log?: boolean;
+  ignoreErrors?: boolean;
+  handleError?: (err: Error) => void;
 }
 
 export class Target {
@@ -283,8 +285,10 @@ export class Target {
     };
   }
 
-  async close() {
-    this.swState.ensureNoErrors();
+  public async close() {
+    if (!this.options.ignoreErrors) {
+      this.swState.ensureNoErrors(this.options.handleError);
+    }
     this.swState.close();
     await this.page.send('ServiceWorker.stopAllWorkers');
     await this.page.send('ServiceWorker.unregister', {
@@ -294,6 +298,12 @@ export class Target {
       targetId: this.targetId
     });
   }
+}
+
+export interface TabConfig {
+  debug?: boolean;
+  ignoreErrors?: boolean;
+  handleError?: (err: Error) => void;
 }
 
 /**
@@ -318,10 +328,12 @@ export class TestEnvironment<S extends TestServerApi = TestServerApi> {
     this.tabIndex = [];
   }
 
-  public async createTab(debug?: boolean): Promise<Target> {
+  public async createTab(config: TabConfig = {}): Promise<Target> {
     const target = await addTimeout(Target.create(this.browserConnection, this.browserContextId, {
       rootUrl: this.testServer.rootUrl,
-      log: debug
+      log: config.debug,
+      ignoreErrors: config.ignoreErrors,
+      handleError: config.handleError
     }), 'New tab creation timeout', 1000);
     this.tabIndex.push(target);
     await target.activate();

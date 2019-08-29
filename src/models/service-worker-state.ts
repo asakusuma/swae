@@ -203,7 +203,7 @@ export class ServiceWorkerState {
   public getErrors() {
     return this.errors;
   }
-  public ensureNoErrors() {
+  public ensureNoErrors(handleError?: (err: Error) => void) {
     const errors = this.errors;
     this.errors = [];
     const cbs = this.errorCallbacks.length;
@@ -219,7 +219,12 @@ export class ServiceWorkerState {
         // Otherwise throw and log
 
         // TODO: Better surface all the errors
-        throw new Error(`Uncaught error thrown in Service Worker: ${errors[0].errorMessage}`);
+        const err = new Error(`Uncaught error thrown in Service Worker: ${errors[0].errorMessage}`);
+        if (handleError) {
+          handleError(err);
+        } else {
+          throw err;
+        }
       }
     }
   }

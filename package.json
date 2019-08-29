@@ -1,6 +1,6 @@
 {
   "name": "swae",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "A service worker testing framework",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
