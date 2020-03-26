@@ -4,13 +4,9 @@ dist: trusty
 node_js:
   - "stable"
 addons:
-  apt:
-    sources:
-      - google-chrome
-    packages:
-      - google-chrome-unstable
+  chrome: stable
 env:
-  - CHROME_PATH=/usr/bin/google-chrome-unstable
+  - CHROME_PATH=/usr/bin/google-chrome
 branches:
   only:
   - master
