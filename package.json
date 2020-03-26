@@ -26,7 +26,7 @@
     "@types/execa": "^2.0.0",
     "@types/mkdirp": "^0.5.2",
     "chrome-debugging-client": "^1.0.2",
-    "devtools-protocol": "^0.0.683290",
+    "devtools-protocol": "^0.0.753577",
     "execa": "^2.0.3",
     "mkdirp": "^0.5.1",
     "os": "^0.1.1"

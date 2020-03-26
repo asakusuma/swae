@@ -508,10 +508,10 @@ destroy@~1.0.4:
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.0.4.tgz#978857442c44749e4206613e37946205826abd80"
   integrity sha1-l4hXRCxEdJ5CBmE+N5RiBYJqvYA=
 
-devtools-protocol@^0.0.683290:
-  version "0.0.683290"
-  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.683290.tgz#57a45202a646af855cb5ac45f08d091ca26ff9e6"
-  integrity sha512-feEUDzwE48ST8NBENNGrTiht1SxoydQN8XFMrZUUzfOx9cAdPfxDoArwFz7xuACOMeqwL0wJHmdb3iiwrxUM+w==
+devtools-protocol@^0.0.753577:
+  version "0.0.753577"
+  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.753577.tgz#9fbd592d12344057292f60a5b73de82408110603"
+  integrity sha512-J/z7FYWEJdiOzDUlboCCHehfSXJO0RD7pWdEy35d9vMutlXqVUPAIj1/MRj4ZENQ4HnsoKjOtvdW1hIMqN2TAg==
 
 diff@3.5.0:
   version "3.5.0"
